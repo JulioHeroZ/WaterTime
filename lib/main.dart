@@ -10,11 +10,12 @@ void main() async {
   await windowManager.ensureInitialized();
 
   WindowOptions windowOptions = WindowOptions(
-    size: Size(800, 600),
+    size: Size(800, 400),
     center: true,
     backgroundColor: Colors.transparent,
     skipTaskbar: false,
     titleBarStyle: TitleBarStyle.hidden,
+    minimumSize: Size(400, 700), // Definindo o tamanho mínimo da janela
   );
   windowManager.waitUntilReadyToShow(windowOptions, () async {
     await windowManager.show();
