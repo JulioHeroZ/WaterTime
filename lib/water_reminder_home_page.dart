@@ -155,19 +155,20 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
 
   Future<void> _addWater(int amount) async {
     setState(() {
+      int previousWaterConsumed = _waterConsumed;
       _waterConsumed += amount;
       _waterHistory.add(amount);
       _lastAddedAmount = amount; // Atualiza a última quantidade adicionada
+
+      // Verifica se a meta foi ultrapassada com esta adição
+      if (previousWaterConsumed < _dailyGoal && _waterConsumed >= _dailyGoal) {
+        widget.notificationManager.showNotification(
+          'Meta Atingida!',
+          'Parabéns! Você atingiu sua meta diária de $_dailyGoal ml de água.',
+        );
+      }
     });
     await _saveData();
-
-    // Verifique se a meta foi atingida após adicionar água
-    if (_waterConsumed >= _dailyGoal) {
-      widget.notificationManager.showNotification(
-        'Meta Atingida!',
-        'Parabéns! Você atingiu sua meta diária de $_dailyGoal ml de água.',
-      );
-    }
   }
 
   Future<void> _removeLastWater() async {
@@ -191,7 +192,7 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
           },
           child: AppBar(
             backgroundColor: const Color.fromARGB(255, 18, 90, 148),
-            elevation: 0,
+            elevation: 10,
             centerTitle: true,
             title: Image.asset(
               'assets/Logo.png',
