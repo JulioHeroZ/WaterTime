@@ -1,6 +1,8 @@
-# watertime
+# WaterTime
 
-A new Flutter project.
+Projeto desenvolvido para Windows.
+
+Lembrete de água, com notificações integradas do windows.
 
 ## Getting Started
 
