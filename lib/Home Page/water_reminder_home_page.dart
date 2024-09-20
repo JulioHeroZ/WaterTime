@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
-import 'Settings Page/settings_page.dart';
-import 'tray_manager.dart';
-import 'data_manager.dart';
-import 'notification_manager.dart';
-import 'custom_amount.dart';
-import 'dialogs.dart';
+import '../Settings Page/settings_page.dart';
+import '../tray_manager.dart';
+import '../data_manager.dart';
+import '../notification_manager.dart';
+import '../custom_amount.dart';
+import '../dialogs.dart';
+import '../Login Page/login_page.dart';
 
 class WaterReminderHomePage extends StatefulWidget {
   final TrayManager trayManager;
@@ -25,7 +26,7 @@ class WaterReminderHomePage extends StatefulWidget {
 class _WaterReminderHomePageState extends State<WaterReminderHomePage>
     with WindowListener {
   int _waterConsumed = 0;
-  int _dailyGoal = 2000; // Meta diária em mililitros
+  int _dailyGoal = 2000;
   List<int> _waterHistory = [];
   DateTime _lastResetDay = DateTime.now();
   Timer? _notificationTimer;
@@ -35,7 +36,9 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
   TimeOfDay _startTime = TimeOfDay(hour: 8, minute: 0);
   TimeOfDay _endTime = TimeOfDay(hour: 22, minute: 0);
   List<CustomAmount> _customAmounts = [];
-  int? _lastAddedAmount; // Armazena a última quantidade adicionada
+  int? _lastAddedAmount;
+
+  Timer? _midnightResetTimer;
 
   @override
   void initState() {
@@ -44,13 +47,38 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
     _loadData();
     _scheduleNotifications();
     _loadCustomAmounts();
+    _scheduleMidnightReset();
   }
 
   @override
   void dispose() {
     windowManager.removeListener(this);
     _notificationTimer?.cancel();
+    _midnightResetTimer?.cancel();
     super.dispose();
+  }
+
+  void _scheduleMidnightReset() {
+    _midnightResetTimer?.cancel();
+
+    final now = DateTime.now();
+    final nextMidnight =
+        DateTime(now.year, now.month, now.day).add(Duration(days: 1));
+    final timeUntilMidnight = nextMidnight.difference(now);
+
+    _midnightResetTimer = Timer(timeUntilMidnight, () {
+      _resetDaily();
+      _scheduleMidnightReset();
+    });
+  }
+
+  void _resetDaily() {
+    setState(() {
+      _waterConsumed = 0;
+      _waterHistory.clear();
+      _lastResetDay = DateTime.now();
+    });
+    _saveData();
   }
 
   Future<void> _loadData() async {
@@ -74,6 +102,15 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
         minute: data['endTimeMinute'] ?? 0,
       );
     });
+    _checkAndResetIfNeeded();
+  }
+
+  void _checkAndResetIfNeeded() {
+    final now = DateTime.now();
+    final lastMidnight = DateTime(now.year, now.month, now.day);
+    if (_lastResetDay.isBefore(lastMidnight)) {
+      _resetDaily();
+    }
   }
 
   Future<void> _loadCustomAmounts() async {
@@ -96,7 +133,7 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
 
   void _checkAndSendNotification() {
     final now = DateTime.now();
-    final currentDay = now.weekday - 1; // 0 = Segunda, 6 = Domingo
+    final currentDay = now.weekday - 1;
     final currentTime = TimeOfDay.fromDateTime(now);
 
     if (_selectedDays[currentDay] &&
@@ -111,7 +148,6 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
           'Lembrete de Água',
           'Hora de beber água! Você já bebeu $_waterConsumed ml de $_dailyGoal ml.',
         );
-        print('Notificação enviada às ${currentTime.format(context)}');
       }
     }
   }
@@ -124,7 +160,6 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
     if (endMinutes > startMinutes) {
       return now >= startMinutes && now <= endMinutes;
     } else {
-      // Caso o horário final seja no dia seguinte
       return now >= startMinutes || now <= endMinutes;
     }
   }
@@ -139,28 +174,13 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
     await DataManager.saveData(data);
   }
 
-  void _checkAndResetDaily() {
-    final now = DateTime.now();
-    if (now.day != _lastResetDay.day ||
-        now.month != _lastResetDay.month ||
-        now.year != _lastResetDay.year) {
-      setState(() {
-        _waterConsumed = 0;
-        _waterHistory.clear();
-        _lastResetDay = now;
-      });
-      _saveData();
-    }
-  }
-
   Future<void> _addWater(int amount) async {
     setState(() {
       int previousWaterConsumed = _waterConsumed;
       _waterConsumed += amount;
       _waterHistory.add(amount);
-      _lastAddedAmount = amount; // Atualiza a última quantidade adicionada
+      _lastAddedAmount = amount;
 
-      // Verifica se a meta foi ultrapassada com esta adição
       if (previousWaterConsumed < _dailyGoal && _waterConsumed >= _dailyGoal) {
         widget.notificationManager.showNotification(
           'Meta Atingida!',
@@ -215,25 +235,23 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
         },
         child: Center(
           child: Container(
-            constraints:
-                BoxConstraints(maxWidth: 400), // Limita a largura máxima
+            constraints: BoxConstraints(maxWidth: 400),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment
-                    .center, // Centraliza os itens horizontalmente
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
                   Text(
                     'Meta diária: $_dailyGoal ml',
                     style: TextStyle(fontSize: 24),
-                    textAlign: TextAlign.center, // Centraliza o texto
+                    textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 16),
                   Text(
                     'Água consumida: $_waterConsumed ml',
                     style: TextStyle(fontSize: 24),
-                    textAlign: TextAlign.center, // Centraliza o texto
+                    textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 32),
                   ElevatedButton(
@@ -290,14 +308,47 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
             context,
             MaterialPageRoute(
                 builder: (context) => SettingsPage(onSettingsChanged: () {
-                      _loadData(); // Recarrega os dados e reagenda as notificações
-                    })), // Atualiza a meta de ml
+                      _loadData();
+                    })),
           );
         },
         child: Icon(Icons.settings),
         tooltip: 'Configurações',
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      drawer: Drawer(
+        child: ListView(
+          children: [
+            DrawerHeader(
+              child: Text('Menu'),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+              ),
+            ),
+            ListTile(
+              title: Text('Login / Registro'),
+              onTap: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginPage()),
+                );
+                if (result == true) {
+                  // Usuário fez login com sucesso, recarregar dados
+                  await _loadData();
+                  setState(() {});
+                }
+              },
+            ),
+            ListTile(
+              title: Text('Logout'),
+              onTap: () async {
+                await _loadData(); // Recarregar dados locais
+                setState(() {});
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -324,32 +375,8 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
 
   @override
   void onWindowEvent(String eventName) {
-    print('Window event: $eventName');
     if (eventName == 'close') {
       widget.trayManager.minimizeToTray();
-    }
-  }
-
-  void _testNotificationSchedule() {
-    final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-
-    for (int i = 0; i < 1440; i++) {
-      // Simula 24 horas (1440 minutos)
-      final testTime = startOfDay.add(Duration(minutes: i));
-      final testTimeOfDay = TimeOfDay.fromDateTime(testTime);
-
-      if (_selectedDays[testTime.weekday - 1] &&
-          _isTimeInRange(testTimeOfDay, _startTime, _endTime)) {
-        final startMinutes = _startTime.hour * 60 + _startTime.minute;
-        final currentMinutes = testTimeOfDay.hour * 60 + testTimeOfDay.minute;
-        final elapsedMinutes = currentMinutes - startMinutes;
-
-        if (elapsedMinutes % (_notificationInterval * 60).round() == 0) {
-          print(
-              'Notificação seria enviada às ${testTimeOfDay.format(context)}');
-        }
-      }
     }
   }
 }

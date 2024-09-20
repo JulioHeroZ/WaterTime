@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'data_manager.dart';
+import '../data_manager.dart';
 
 class SettingsPage extends StatefulWidget {
   final Function() onSettingsChanged;
