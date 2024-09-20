@@ -323,13 +323,6 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
   }
 
   @override
-  void onWindowEvent(String eventName) {
-    print('Window event: $eventName');
-    if (eventName == 'close') {
-      widget.trayManager.minimizeToTray();
-    }
-  }
-
   void _testNotificationSchedule() {
     final now = DateTime.now();
     final startOfDay = DateTime(now.year, now.month, now.day);
