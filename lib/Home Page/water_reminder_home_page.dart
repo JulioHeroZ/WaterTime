@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
+import '../History Page/history_page.dart';
 import '../Settings Page/settings_page.dart';
 import '../tray_manager.dart';
 import '../data_manager.dart';
@@ -8,6 +9,7 @@ import '../notification_manager.dart';
 import '../custom_amount.dart';
 import '../dialogs.dart';
 import '../Login Page/login_page.dart';
+import '../widgets/cup_widget.dart';
 
 class WaterReminderHomePage extends StatefulWidget {
   final TrayManager trayManager;
@@ -27,7 +29,6 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
     with WindowListener {
   int _waterConsumed = 0;
   int _dailyGoal = 2000;
-  List<int> _waterHistory = [];
   DateTime _lastResetDay = DateTime.now();
   Timer? _notificationTimer;
 
@@ -40,6 +41,8 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
 
   Timer? _midnightResetTimer;
 
+  List<Map<String, dynamic>> _history = [];
+
   @override
   void initState() {
     super.initState();
@@ -48,6 +51,7 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
     _scheduleNotifications();
     _loadCustomAmounts();
     _scheduleMidnightReset();
+    _loadHistory();
   }
 
   @override
@@ -75,7 +79,6 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
   void _resetDaily() {
     setState(() {
       _waterConsumed = 0;
-      _waterHistory.clear();
       _lastResetDay = DateTime.now();
     });
     _saveData();
@@ -86,7 +89,6 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
     setState(() {
       _waterConsumed = data['waterConsumed'] ?? 0;
       _dailyGoal = data['dailyGoal'] ?? 2000;
-      _waterHistory = List<int>.from(data['waterHistory'] ?? []);
       _lastResetDay = DateTime.parse(
           data['lastResetDay'] ?? DateTime.now().toIso8601String());
 
@@ -168,7 +170,6 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
     final data = {
       'waterConsumed': _waterConsumed,
       'dailyGoal': _dailyGoal,
-      'waterHistory': _waterHistory,
       'lastResetDay': _lastResetDay.toIso8601String(),
     };
     await DataManager.saveData(data);
@@ -178,9 +179,7 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
     setState(() {
       int previousWaterConsumed = _waterConsumed;
       _waterConsumed += amount;
-      _waterHistory.add(amount);
       _lastAddedAmount = amount;
-
       if (previousWaterConsumed < _dailyGoal && _waterConsumed >= _dailyGoal) {
         widget.notificationManager.showNotification(
           'Meta Atingida!',
@@ -188,17 +187,34 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
         );
       }
     });
-    await _saveData();
+    await DataManager.addWater(amount);
+    await _loadHistory(); // Recarrega o histórico após adicionar água
+
+    // Verificar marcos e enviar notificações
   }
 
   Future<void> _removeLastWater() async {
-    if (_waterHistory.isNotEmpty) {
+    final int? lastAmount = await DataManager.removeLastAddition();
+    if (lastAmount != null) {
       setState(() {
-        int lastAmount = _waterHistory.removeLast();
         _waterConsumed -= lastAmount;
+        if (_waterConsumed < 0) _waterConsumed = 0;
       });
       await _saveData();
+      await _loadHistory(); // Recarregar o histórico após remover água
+    } else {
+      // Informar ao usuário que não há adições para remover
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Nenhuma quantidade para remover')),
+      );
     }
+  }
+
+  Future<void> _loadHistory() async {
+    final history = await DataManager.getHistory();
+    setState(() {
+      _history = history;
+    });
   }
 
   @override
@@ -211,6 +227,9 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
             windowManager.startDragging();
           },
           child: AppBar(
+            iconTheme: IconThemeData(
+              color: Colors.white, // Define a cor dos ícones para branco
+            ),
             backgroundColor: const Color.fromARGB(255, 18, 90, 148),
             elevation: 10,
             centerTitle: true,
@@ -242,6 +261,11 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
+                  CupWidget(
+                    currentIntake: _waterConsumed.toDouble(),
+                    dailyGoal: _dailyGoal.toDouble(),
+                  ),
+                  SizedBox(height: 16),
                   Text(
                     'Meta diária: $_dailyGoal ml',
                     style: TextStyle(fontSize: 24),
@@ -289,13 +313,15 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
                   ),
                   SizedBox(height: 16),
                   TextButton(
-                    onPressed: _waterHistory.isEmpty ? null : _removeLastWater,
+                    onPressed:
+                        (_lastAddedAmount != null) ? _removeLastWater : null,
                     style: TextButton.styleFrom(
                       foregroundColor: Colors.grey[600],
                       textStyle: TextStyle(fontSize: 14),
                     ),
                     child: Text('Remover quantidade'),
                   ),
+                  SizedBox(height: 32),
                 ],
               ),
             ),
@@ -320,13 +346,27 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
         child: ListView(
           children: [
             DrawerHeader(
-              child: Text('Menu'),
+              child: Text(
+                'Menu',
+                style: TextStyle(color: Colors.white),
+              ),
               decoration: BoxDecoration(
                 color: Theme.of(context).primaryColor,
               ),
             ),
             ListTile(
-              title: Text('Login / Registro'),
+              title: Text('Histórico'),
+              onTap: () async {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => HistoricoPage()),
+                );
+                await _loadData(); // Recarregar dados locais
+                setState(() {});
+              },
+            ),
+            ListTile(
+              title: Text('Login (Em Breve)'),
               onTap: () async {
                 final result = await Navigator.push(
                   context,
@@ -339,13 +379,13 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
                 }
               },
             ),
-            ListTile(
+            /*ListTile(
               title: Text('Logout'),
               onTap: () async {
                 await _loadData(); // Recarregar dados locais
                 setState(() {});
               },
-            ),
+            ),*/
           ],
         ),
       ),
