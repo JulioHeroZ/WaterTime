@@ -42,6 +42,8 @@ dependencies:
   ffi: ^2.0.1
   local_notifier: ^0.1.5
   intl: ^0.18.1
+  ionicons: ^0.2.2
+  easy_sidemenu: ^0.6.0
   
 dev_dependencies:
   flutter_test:
@@ -103,3 +105,7 @@ flutter:
     - assets/images/Copo Vazio.png
     - assets/images/Copo Metade.png
     - assets/images/Copo Cheio.png
+    - assets/images/apple.png
+    - assets/images/google.png
+    - assets/images/facebook.png
+    - assets/images/image.png
