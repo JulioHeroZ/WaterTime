@@ -1,8 +1,8 @@
 # WaterTime
 
-Projeto desenvolvido para Windows.
+Projeto desenvolvido para Android.
 
-Lembrete de água, com notificações integradas do windows.
+Lembrete de água, com notificações integradas do android.
 
 ## Getting Started
 
