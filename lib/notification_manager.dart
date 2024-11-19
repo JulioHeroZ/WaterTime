@@ -1,18 +1,38 @@
-import 'package:local_notifier/local_notifier.dart';
+import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:flutter/material.dart';
 
 class NotificationManager {
   Future<void> initializeNotifications() async {
-    await localNotifier.setup(
-      appName: 'Water Time',
-      shortcutPolicy: ShortcutPolicy.requireCreate,
+    await AwesomeNotifications().initialize(
+      null,
+      [
+        NotificationChannel(
+          channelKey: 'water_reminder_channel',
+          channelName: 'Lembretes de Água',
+          channelDescription: 'Canal para lembretes de beber água',
+          defaultColor: Color.fromARGB(255, 64, 187, 224),
+          ledColor: Color.fromARGB(255, 64, 187, 224),
+          importance: NotificationImportance.High,
+        )
+      ],
     );
+
+    await AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
+      if (!isAllowed) {
+        AwesomeNotifications().requestPermissionToSendNotifications();
+      }
+    });
   }
 
-  void showNotification(String title, String body) {
-    LocalNotification notification = LocalNotification(
-      title: title,
-      body: body,
+  Future<void> showNotification(String title, String body) async {
+    await AwesomeNotifications().createNotification(
+      content: NotificationContent(
+        id: 0,
+        channelKey: 'water_reminder_channel',
+        title: title,
+        body: body,
+        notificationLayout: NotificationLayout.Default,
+      ),
     );
-    notification.show();
   }
 }

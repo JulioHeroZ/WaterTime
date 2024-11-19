@@ -3,10 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  local_notifier
-  screen_retriever
-  system_tray
-  window_manager
+  awesome_notifications
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:window_manager/window_manager.dart';
 import '../History Page/history_page.dart';
 import '../Settings Page/settings_page.dart';
-import '../tray_manager.dart';
 import '../data_manager.dart';
 import '../notification_manager.dart';
 import '../custom_amount.dart';
@@ -14,12 +12,10 @@ import 'package:ionicons/ionicons.dart';
 import 'package:easy_sidemenu/easy_sidemenu.dart';
 
 class WaterReminderHomePage extends StatefulWidget {
-  final TrayManager trayManager;
   final NotificationManager notificationManager;
 
   const WaterReminderHomePage({
     Key? key,
-    required this.trayManager,
     required this.notificationManager,
   }) : super(key: key);
 
@@ -28,7 +24,7 @@ class WaterReminderHomePage extends StatefulWidget {
 }
 
 class _WaterReminderHomePageState extends State<WaterReminderHomePage>
-    with WindowListener, TickerProviderStateMixin {
+    with TickerProviderStateMixin {
   int _waterConsumed = 0;
   int _dailyGoal = 2000;
   DateTime _lastResetDay = DateTime.now();
@@ -61,7 +57,6 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
   @override
   void initState() {
     super.initState();
-    windowManager.addListener(this);
     _loadData();
     _scheduleNotifications();
     _loadCustomAmounts();
@@ -146,7 +141,6 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
 
   @override
   void dispose() {
-    windowManager.removeListener(this);
     _notificationTimer?.cancel();
     _midnightResetTimer?.cancel();
 
@@ -319,223 +313,196 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Row(
-        children: [
-          // SideMenu do easy_sidemenu
-          SideMenu(
-            controller: _sideMenuController,
-            style: SideMenuStyle(
-              itemInnerSpacing: 6,
-              itemHeight: 50.0,
-              showTooltip: true,
-              iconSize: 25,
-              compactSideMenuWidth: 60,
-              openSideMenuWidth: 200,
-              itemBorderRadius: const BorderRadius.all(
-                Radius.circular(0.0),
+      backgroundColor: Color.fromARGB(255, 250, 250, 250),
+      body: SafeArea(
+        child: Row(
+          children: [
+            SideMenu(
+              controller: _sideMenuController,
+              style: SideMenuStyle(
+                itemInnerSpacing: 6,
+                itemHeight: 50.0,
+                showTooltip: true,
+                iconSize: 25,
+                compactSideMenuWidth: 60,
+                openSideMenuWidth: 200,
+                itemBorderRadius: const BorderRadius.all(
+                  Radius.circular(0.0),
+                ),
+                displayMode: SideMenuDisplayMode.auto,
+                hoverColor: const Color.fromARGB(255, 255, 255, 255),
+                selectedColor: const Color.fromARGB(255, 255, 255, 255),
+                selectedTitleTextStyle:
+                    TextStyle(color: const Color.fromARGB(255, 0, 0, 0)),
+                unselectedTitleTextStyle: TextStyle(color: Colors.black),
+                backgroundColor: Color.fromARGB(255, 255, 255, 255),
+                // Adicione mais estilos conforme necessário
               ),
-              displayMode: SideMenuDisplayMode.auto,
-              hoverColor: const Color.fromARGB(255, 255, 255, 255),
-              selectedColor: const Color.fromARGB(255, 255, 255, 255),
-              selectedTitleTextStyle:
-                  TextStyle(color: const Color.fromARGB(255, 0, 0, 0)),
-              unselectedTitleTextStyle: TextStyle(color: Colors.black),
-              backgroundColor: Color.fromARGB(255, 255, 255, 255),
-              // Adicione mais estilos conforme necessário
-            ),
-            items: [
-              SideMenuItem(
-                title: 'Login (Em Breve)',
-                onTap: (index, _) async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => SignIn()),
-                  );
-                  if (result == true) {
-                    // Usuário fez login com sucesso, recarregar dados
-                    await _loadData();
+              items: [
+                SideMenuItem(
+                  title: 'Login (Em Breve)',
+                  onTap: (index, _) async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => SignIn()),
+                    );
+                    if (result == true) {
+                      // Usuário fez login com sucesso, recarregar dados
+                      await _loadData();
+                      setState(() {});
+                    }
+                  },
+                  icon: Icon(Ionicons.person_circle_outline),
+                ),
+                SideMenuItem(
+                  title: 'Histórico',
+                  onTap: (index, _) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => HistoricoPage()),
+                    );
+                    _loadData(); // Recarregar dados locais
                     setState(() {});
-                  }
-                },
-                icon: Icon(Ionicons.person_circle_outline),
-              ),
-              SideMenuItem(
-                title: 'Histórico',
-                onTap: (index, _) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => HistoricoPage()),
-                  );
-                  _loadData(); // Recarregar dados locais
-                  setState(() {});
-                },
-                icon: Icon(Ionicons.calendar_outline),
-              ),
+                  },
+                  icon: Icon(Ionicons.calendar_outline),
+                ),
 
-              // Você pode adicionar mais itens aqui
-            ],
-          ),
-
-          Expanded(
-            child: Scaffold(
-              backgroundColor: Color.fromARGB(255, 250, 250, 250),
-              body: Column(
+                // Você pode adicionar mais itens aqui
+              ],
+            ),
+            Expanded(
+              child: Column(
                 children: [
-                  // Animação de onda substituindo o AppBar
-                  SizedBox(
-                    height: 150, // Altura desejada para a animação
+                  Container(
+                    height: 150,
                     width: double.infinity,
                     child: Stack(
                       children: [
                         CustomPaint(
+                          size: Size(double.infinity, 150),
                           painter: MyPainter(
                             firstAnimation.value,
                             secondAnimation.value,
                             thirdAnimation.value,
                             fourthAnimation.value,
                           ),
-                          child: SizedBox(
-                            height: 150,
-                            width: double.infinity,
-                          ),
                         ),
                         Positioned(
-                          top: -30,
+                          top: -40,
                           left: 0,
                           right: 0,
-                          child: GestureDetector(
-                            onPanStart: (details) {
-                              windowManager.startDragging();
-                            },
-                            child: Image.asset(
-                              'assets/Logo.png',
-                              height: 120, // Ajuste conforme necessário
-                              alignment: Alignment.center,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          right: 10,
-                          top: 10,
-                          child: IconButton(
-                            icon: Icon(Ionicons.close_outline,
-                                color: Colors.white),
-                            onPressed: () {
-                              widget.trayManager.minimizeToTray();
-                            },
+                          child: Image.asset(
+                            'assets/Logo.png',
+                            height: 150,
+                            alignment: Alignment.center,
                           ),
                         ),
                       ],
                     ),
                   ),
                   Expanded(
-                    child: GestureDetector(
-                      child: Center(
-                        child: Container(
-                          constraints: BoxConstraints(maxWidth: 400),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: <Widget>[
-                                CupWidget(
-                                  currentIntake: _waterConsumed.toDouble(),
-                                  dailyGoal: _dailyGoal.toDouble(),
-                                ),
-                                SizedBox(height: 16),
-                                Text(
-                                  'Meta diária: $_dailyGoal ml',
-                                  style: TextStyle(
-                                      fontSize: 24,
-                                      color:
-                                          const Color.fromARGB(255, 0, 0, 0)),
-                                  textAlign: TextAlign.center,
-                                ),
-                                SizedBox(height: 16),
-                                Text(
-                                  'Água consumida: $_waterConsumed ml',
-                                  style: TextStyle(
-                                      fontSize: 24,
-                                      color:
-                                          const Color.fromARGB(255, 0, 0, 0)),
-                                  textAlign: TextAlign.center,
-                                ),
-                                SizedBox(height: 32),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    _showWaterSelectionDialog();
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor:
-                                        Color.fromARGB(255, 246, 255, 252),
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 32, vertical: 16),
-                                    textStyle: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white),
-                                  ),
-                                  child: Text('Adicionar água'),
-                                ),
-                                SizedBox(height: 16),
-                                if (_lastAddedAmount != null)
-                                  ElevatedButton(
-                                    onPressed: () async {
-                                      await _addWater(_lastAddedAmount!);
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor:
-                                          Color.fromARGB(255, 246, 255, 252),
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 32, vertical: 16),
-                                      textStyle: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white),
-                                    ),
-                                    child: Text('+ $_lastAddedAmount ml'),
-                                  ),
-                                SizedBox(height: 16),
-                                TextButton(
-                                  onPressed: (_lastAddedAmount != null)
-                                      ? _removeLastWater
-                                      : null,
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: Colors.grey[600],
-                                    textStyle: TextStyle(fontSize: 14),
-                                  ),
-                                  child: Text('Remover quantidade'),
-                                ),
-                                SizedBox(height: 32),
-                              ],
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: <Widget>[
+                            CupWidget(
+                              currentIntake: _waterConsumed.toDouble(),
+                              dailyGoal: _dailyGoal.toDouble(),
                             ),
-                          ),
+                            SizedBox(height: 16),
+                            Text(
+                              'Meta diária: $_dailyGoal ml',
+                              style: TextStyle(
+                                  fontSize: 24,
+                                  color:
+                                      const Color.fromARGB(255, 0, 0, 0)),
+                              textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'Água consumida: $_waterConsumed ml',
+                              style: TextStyle(
+                                  fontSize: 24,
+                                  color:
+                                      const Color.fromARGB(255, 0, 0, 0)),
+                              textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: 32),
+                            ElevatedButton(
+                              onPressed: () {
+                                _showWaterSelectionDialog();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    Color.fromARGB(255, 246, 255, 252),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 32, vertical: 16),
+                                textStyle: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white),
+                              ),
+                              child: Text('Adicionar água'),
+                            ),
+                            SizedBox(height: 16),
+                            if (_lastAddedAmount != null)
+                              ElevatedButton(
+                                onPressed: () async {
+                                  await _addWater(_lastAddedAmount!);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      Color.fromARGB(255, 246, 255, 252),
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 32, vertical: 16),
+                                  textStyle: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white),
+                                ),
+                                child: Text('+ $_lastAddedAmount ml'),
+                              ),
+                            SizedBox(height: 16),
+                            TextButton(
+                              onPressed: (_lastAddedAmount != null)
+                                  ? _removeLastWater
+                                  : null,
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.grey[600],
+                                textStyle: TextStyle(fontSize: 14),
+                              ),
+                              child: Text('Remover quantidade'),
+                            ),
+                            SizedBox(height: 32),
+                          ],
                         ),
                       ),
                     ),
                   ),
                 ],
               ),
-              floatingActionButton: FloatingActionButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>
-                            SettingsPage(onSettingsChanged: () {
-                              _loadData();
-                            })),
-                  );
-                },
-                child: const Icon(Ionicons.settings_outline),
-                tooltip: 'Configurações',
-              ),
-              floatingActionButtonLocation:
-                  FloatingActionButtonLocation.endFloat,
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SettingsPage(
+                onSettingsChanged: () {
+                  _loadData();
+                },
+              ),
+            ),
+          );
+        },
+        child: const Icon(Ionicons.settings_outline),
+        tooltip: 'Configurações',
       ),
     );
   }
@@ -559,13 +526,6 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
         );
       },
     );
-  }
-
-  @override
-  void onWindowEvent(String eventName) {
-    if (eventName == 'close') {
-      widget.trayManager.minimizeToTray();
-    }
   }
 }
 
