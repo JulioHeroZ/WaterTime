@@ -62,6 +62,11 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
     _loadCustomAmounts();
     _scheduleMidnightReset();
     _loadHistory();
+    
+    // Adicionar verificação de otimização de bateria
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.notificationManager.checkBatteryOptimization(context);
+    });
 
     // Inicialização das animações
     firstController = AnimationController(
@@ -219,9 +224,17 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
 
   void _scheduleNotifications() {
     _notificationTimer?.cancel();
-    _notificationTimer = Timer.periodic(Duration(minutes: 1), (timer) {
-      _checkAndSendNotification();
-    });
+    
+    final now = DateTime.now();
+    final scheduledTime = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      now.hour,
+      now.minute + (_notificationInterval * 60).toInt(),
+    );
+
+    widget.notificationManager.scheduleNotification(scheduledTime);
   }
 
   void _checkAndSendNotification() {
@@ -497,12 +510,12 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
                 onSettingsChanged: () {
                   _loadData();
                 },
+                notificationManager: widget.notificationManager,
               ),
             ),
           );
         },
-        child: const Icon(Ionicons.settings_outline),
-        tooltip: 'Configurações',
+        child: const Icon(Icons.settings),
       ),
     );
   }

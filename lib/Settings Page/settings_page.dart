@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import '../data_manager.dart';
+import '../notification_manager.dart';
 
 class SettingsPage extends StatefulWidget {
   final Function() onSettingsChanged;
+  final NotificationManager notificationManager;
 
-  SettingsPage({required this.onSettingsChanged});
+  SettingsPage({
+    required this.onSettingsChanged,
+    required this.notificationManager,
+  });
 
   @override
   _SettingsPageState createState() => _SettingsPageState();
@@ -70,74 +75,86 @@ class _SettingsPageState extends State<SettingsPage> {
       appBar: AppBar(
         title: Text('Configurações'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Dias de notificação',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            _buildDaySelector(),
-            SizedBox(height: 20),
-            Text(
-              'Intervalo de horário',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            _buildTimeRangeSelector(),
-            SizedBox(height: 20),
-            Text(
-              'Intervalo de notificação',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            Slider(
-              value: _notificationInterval,
-              min: 0.5,
-              max: 6,
-              divisions: 11,
-              label: _notificationInterval.toString(),
-              onChanged: (double value) {
-                setState(() {
-                  _notificationInterval = value;
-                });
-              },
-            ),
-            Text(
-              'Notificar a cada ${_notificationInterval.toStringAsFixed(1)} horas',
-              style: TextStyle(fontSize: 16),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Meta diária de água (ml)',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: _dailyGoalController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Meta diária (ml)',
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Dias de notificação',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              onChanged: (value) {
-                setState(() {
-                  _dailyGoal = int.tryParse(value) ?? 2000;
-                });
-              },
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () async {
-                await _saveSettings();
-                Navigator.pop(context);
-              },
-              child: Text('Salvar'),
-            ),
-          ],
+              SizedBox(height: 10),
+              _buildDaySelector(),
+              SizedBox(height: 20),
+              Text(
+                'Intervalo de horário',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 10),
+              _buildTimeRangeSelector(),
+              SizedBox(height: 20),
+              Text(
+                'Intervalo de notificação',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 10),
+              Slider(
+                value: _notificationInterval,
+                min: 0.5,
+                max: 6,
+                divisions: 11,
+                label: _notificationInterval.toString(),
+                onChanged: (double value) {
+                  setState(() {
+                    _notificationInterval = value;
+                  });
+                },
+              ),
+              Text(
+                'Notificar a cada ${_notificationInterval.toStringAsFixed(1)} horas',
+                style: TextStyle(fontSize: 16),
+              ),
+              SizedBox(height: 20),
+              Text(
+                'Meta diária de água (ml)',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 10),
+              TextField(
+                controller: _dailyGoalController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Meta diária (ml)',
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _dailyGoal = int.tryParse(value) ?? 2000;
+                  });
+                },
+              ),
+              SizedBox(height: 20),
+              Divider(height: 32),
+              
+              ListTile(
+                title: Text('Otimização de Bateria'),
+                subtitle: Text('Configurar permissões para notificações em segundo plano'),
+                trailing: Icon(Icons.battery_saver),
+                onTap: () => widget.notificationManager.openBatterySettings(context),
+              ),
+              
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () async {
+                  await _saveSettings();
+                  Navigator.pop(context);
+                },
+                child: Text('Salvar'),
+              ),
+            ],
+          ),
         ),
       ),
     );
