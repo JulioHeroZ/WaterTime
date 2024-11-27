@@ -548,31 +548,7 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
                     },
                     child: Icon(Icons.settings),
                     heroTag: 'settings',
-                  ),
-                  FloatingActionButton(
-                    onPressed: () {
-                      showMenu(
-                        context: context,
-                        position: RelativeRect.fromLTRB(100, 50, 0, 0),
-                        items: [
-                          PopupMenuItem(
-                            child: Text('Primeira Gota'),
-                            onTap: () => AchievementManager.testAchievement('first_water'),
-                          ),
-                          PopupMenuItem(
-                            child: Text('Meta Diária'),
-                            onTap: () => AchievementManager.testAchievement('daily_goal'),
-                          ),
-                          PopupMenuItem(
-                            child: Text('Sequência 3 Dias'),
-                            onTap: () => AchievementManager.testAchievement('streak_3'),
-                          ),
-                        ],
-                      );
-                    },
-                    child: Icon(Icons.emoji_events_outlined),
-                    heroTag: 'achievements',
-                  ),
+                  )
                 ],
               ),
               floatingActionButtonLocation:
