@@ -9,7 +9,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Configuração do auto updater
-  String feedURL = 'https://seu-servidor.com/appcast.xml'; // URL do seu servidor de updates
+  String feedURL = 'https://raw.githubusercontent.com/JulioHeroZ/WaterTime/release/dist/appcast.xml'; // URL do seu servidor de updates
   await autoUpdater.setFeedURL(feedURL);
   await autoUpdater.checkForUpdates(); // Verifica updates ao iniciar
   await autoUpdater.setScheduledCheckInterval(3600); // Verifica a cada 1 hora
