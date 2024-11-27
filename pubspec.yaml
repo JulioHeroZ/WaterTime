@@ -48,6 +48,7 @@ dependencies:
   achievement_view: ^1.0.1
   audioplayers: ^5.2.1
   auto_updater: ^1.0.0
+  flutter_distributor: 0.4.5
   
 dev_dependencies:
   flutter_test:
