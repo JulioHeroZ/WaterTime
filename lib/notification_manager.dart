@@ -1,4 +1,5 @@
 import 'package:local_notifier/local_notifier.dart';
+import 'sound_manager.dart';
 
 class NotificationManager {
   Future<void> initializeNotifications() async {
@@ -8,7 +9,8 @@ class NotificationManager {
     );
   }
 
-  void showNotification(String title, String body) {
+  void showNotification(String title, String body) async {
+    await SoundManager.playSound('notification');
     LocalNotification notification = LocalNotification(
       title: title,
       body: body,

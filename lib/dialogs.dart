@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'custom_amount.dart';
+import 'sound_manager.dart';
+import 'data_manager.dart';
 
 class WaterSelectionDialog extends StatelessWidget {
   final List<CustomAmount> customAmounts;

@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'custom_amount.dart';
+import 'achievements/achievement_manager.dart';
+import 'sound_manager.dart';
 
 class DataManager {
   static Future<String> get _localPath async {
@@ -59,10 +61,24 @@ class DataManager {
   // Método para adicionar água
   static Future<void> addWater(int amount) async {
     final data = await loadData();
+    final currentConsumed = data['waterConsumed'] ?? 0;
+    final dailyGoal = data['dailyGoal'] ?? 2000;
+    final updatedConsumed = currentConsumed + amount;
+
+    // Toca o som de adição de água
+    if (amount > 0) {
+      await SoundManager.playSound('add_water');
+    } else {
+      await SoundManager.playSound('remove_water');
+    }
+
+    // Verifica e toca o som de meta atingida
+    if (currentConsumed < dailyGoal && updatedConsumed >= dailyGoal) {
+      await SoundManager.playSound('goal_complete');
+      await AchievementManager.checkAchievement('daily_goal');
+    }
 
     // Atualiza o consumo de água
-    final int currentConsumed = data['waterConsumed'] ?? 0;
-    final int updatedConsumed = currentConsumed + amount;
     data['waterConsumed'] = updatedConsumed;
 
     // Atualiza o histórico diário

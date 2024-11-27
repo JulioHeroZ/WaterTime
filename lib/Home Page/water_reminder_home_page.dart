@@ -12,6 +12,10 @@ import '../Login Page/login_page.dart';
 import '../widgets/cup_widget.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:easy_sidemenu/easy_sidemenu.dart';
+import '../Statistics Page/statistics_page.dart';
+import '../widgets/animated_water_glass.dart';
+import '../achievements/achievement_manager.dart';
+import '../achievements/achievements_page.dart';
 
 class WaterReminderHomePage extends StatefulWidget {
   final TrayManager trayManager;
@@ -57,6 +61,8 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
 
   late AnimationController fourthController;
   late Animation<double> fourthAnimation;
+
+  bool _testAchievementUnlocked = false;
 
   @override
   void initState() {
@@ -371,6 +377,26 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
                 },
                 icon: Icon(Ionicons.calendar_outline),
               ),
+              SideMenuItem(
+                title: 'Estatísticas',
+                onTap: (index, _) {
+                  Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => StatisticsPage()),
+                      );
+                    },
+                icon: Icon(Ionicons.stats_chart_outline),
+              ),
+              SideMenuItem(
+                title: 'Conquistas',
+                onTap: (index, _) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AchievementsPage()),
+                  );
+                },
+                icon: Icon(Icons.emoji_events_outlined),
+              ),
 
               // Você pode adicionar mais itens aqui
             ],
@@ -439,10 +465,7 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: <Widget>[
-                                CupWidget(
-                                  currentIntake: _waterConsumed.toDouble(),
-                                  dailyGoal: _dailyGoal.toDouble(),
-                                ),
+                                _buildWaterDisplay(),
                                 SizedBox(height: 16),
                                 Text(
                                   'Meta diária: $_dailyGoal ml',
@@ -453,15 +476,6 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
                                   textAlign: TextAlign.center,
                                 ),
                                 SizedBox(height: 16),
-                                Text(
-                                  'Água consumida: $_waterConsumed ml',
-                                  style: TextStyle(
-                                      fontSize: 24,
-                                      color:
-                                          const Color.fromARGB(255, 0, 0, 0)),
-                                  textAlign: TextAlign.center,
-                                ),
-                                SizedBox(height: 32),
                                 ElevatedButton(
                                   onPressed: () {
                                     _showWaterSelectionDialog();
@@ -517,19 +531,49 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
                   ),
                 ],
               ),
-              floatingActionButton: FloatingActionButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>
+              floatingActionButton: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  FloatingActionButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => 
                             SettingsPage(onSettingsChanged: () {
                               _loadData();
-                            })),
-                  );
-                },
-                child: const Icon(Ionicons.settings_outline),
-                tooltip: 'Configurações',
+                            }),
+                        ),
+                      );
+                    },
+                    child: Icon(Icons.settings),
+                    heroTag: 'settings',
+                  ),
+                  FloatingActionButton(
+                    onPressed: () {
+                      showMenu(
+                        context: context,
+                        position: RelativeRect.fromLTRB(100, 50, 0, 0),
+                        items: [
+                          PopupMenuItem(
+                            child: Text('Primeira Gota'),
+                            onTap: () => AchievementManager.testAchievement('first_water'),
+                          ),
+                          PopupMenuItem(
+                            child: Text('Meta Diária'),
+                            onTap: () => AchievementManager.testAchievement('daily_goal'),
+                          ),
+                          PopupMenuItem(
+                            child: Text('Sequência 3 Dias'),
+                            onTap: () => AchievementManager.testAchievement('streak_3'),
+                          ),
+                        ],
+                      );
+                    },
+                    child: Icon(Icons.emoji_events_outlined),
+                    heroTag: 'achievements',
+                  ),
+                ],
               ),
               floatingActionButtonLocation:
                   FloatingActionButtonLocation.endFloat,
@@ -537,6 +581,26 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildWaterDisplay() {
+    return Column(
+      children: [
+        AnimatedWaterGlass(
+          progress: _waterConsumed / _dailyGoal,
+          height: 200,
+          width: 120,
+        ),
+        SizedBox(height: 20),
+        Text(
+          '$_waterConsumed / $_dailyGoal ml',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
     );
   }
 

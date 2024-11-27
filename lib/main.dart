@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:auto_updater/auto_updater.dart';
 import 'water_reminder_app.dart';
 import 'tray_manager.dart';
 import 'notification_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Configuração do auto updater
+  String feedURL = 'https://seu-servidor.com/appcast.xml'; // URL do seu servidor de updates
+  await autoUpdater.setFeedURL(feedURL);
+  await autoUpdater.checkForUpdates(); // Verifica updates ao iniciar
+  await autoUpdater.setScheduledCheckInterval(3600); // Verifica a cada 1 hora
 
   await windowManager.ensureInitialized();
 
@@ -15,7 +22,7 @@ void main() async {
     backgroundColor: Colors.transparent,
     skipTaskbar: false,
     titleBarStyle: TitleBarStyle.hidden,
-    minimumSize: Size(400, 700), // Definindo o tamanho mínimo da janela
+    minimumSize: Size(400, 700),
   );
   windowManager.waitUntilReadyToShow(windowOptions, () async {
     await windowManager.show();

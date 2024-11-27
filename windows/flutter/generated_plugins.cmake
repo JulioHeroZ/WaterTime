@@ -3,6 +3,8 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  audioplayers_windows
+  auto_updater_windows
   local_notifier
   screen_retriever
   system_tray
