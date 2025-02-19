@@ -9,7 +9,7 @@ class SignIn extends StatelessWidget {
     Size size = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
-        title: Text('Login'),
+        title: const Text('Login'),
         backgroundColor: Colors.transparent,
       ),
       body: Container(

@@ -16,6 +16,7 @@ import '../Statistics Page/statistics_page.dart';
 import '../widgets/animated_water_glass.dart';
 import '../achievements/achievement_manager.dart';
 import '../achievements/achievements_page.dart';
+import 'package:auto_updater/auto_updater.dart';
 
 class WaterReminderHomePage extends StatefulWidget {
   final TrayManager trayManager;
@@ -194,6 +195,7 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
       _dailyGoal = data['dailyGoal'] ?? 2000;
       _lastResetDay = DateTime.parse(
           data['lastResetDay'] ?? DateTime.now().toIso8601String());
+      _lastAddedAmount = data['lastAddedAmount'];
 
       _notificationInterval = data['notificationInterval'] ?? 2.0;
       _selectedDays =
@@ -274,6 +276,7 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
       'waterConsumed': _waterConsumed,
       'dailyGoal': _dailyGoal,
       'lastResetDay': _lastResetDay.toIso8601String(),
+      'lastAddedAmount': _lastAddedAmount,
     };
     await DataManager.saveData(data);
   }
@@ -381,10 +384,10 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
                 title: 'Estatísticas',
                 onTap: (index, _) {
                   Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => StatisticsPage()),
-                      );
-                    },
+                    context,
+                    MaterialPageRoute(builder: (context) => StatisticsPage()),
+                  );
+                },
                 icon: Icon(Ionicons.stats_chart_outline),
               ),
               SideMenuItem(
@@ -396,6 +399,28 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
                   );
                 },
                 icon: Icon(Icons.emoji_events_outlined),
+              ),
+              SideMenuItem(
+                title: 'Verificar Atualizações',
+                onTap: (index, _) async {
+                  try {
+                    await autoUpdater.checkForUpdates();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Verificando atualizações...'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Erro ao verificar atualizações'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                },
+                icon: Icon(Icons.system_update_outlined),
               ),
 
               // Você pode adicionar mais itens aqui
@@ -531,25 +556,19 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
                   ),
                 ],
               ),
-              floatingActionButton: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  FloatingActionButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => 
-                            SettingsPage(onSettingsChanged: () {
-                              _loadData();
-                            }),
-                        ),
-                      );
-                    },
-                    child: Icon(Icons.settings),
-                    heroTag: 'settings',
-                  )
-                ],
+              floatingActionButton: FloatingActionButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SettingsPage(onSettingsChanged: () {
+                        _loadData();
+                      }),
+                    ),
+                  );
+                },
+                child: Icon(Icons.settings),
+                heroTag: 'settings',
               ),
               floatingActionButtonLocation:
                   FloatingActionButtonLocation.endFloat,

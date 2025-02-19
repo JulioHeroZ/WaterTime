@@ -24,9 +24,9 @@ class Achievement {
   });
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'isUnlocked': isUnlocked,
-  };
+        'id': id,
+        'isUnlocked': isUnlocked,
+      };
 
   factory Achievement.fromJson(Map<String, dynamic> json) {
     return Achievement(
@@ -42,8 +42,17 @@ class Achievement {
 }
 
 class AchievementManager {
-  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-  
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
+
+  static Future<void> initializeAchievements() async {
+    final prefs = await SharedPreferences.getInstance();
+    for (var achievement in achievements) {
+      achievement.isUnlocked =
+          prefs.getBool('achievement_${achievement.id}') ?? false;
+    }
+  }
+
   static final List<Achievement> achievements = [
     Achievement(
       id: 'first_water',
@@ -74,7 +83,11 @@ class AchievementManager {
   static Future<void> checkAchievement(String achievementId) async {
     final prefs = await SharedPreferences.getInstance();
     final achievement = achievements.firstWhere((a) => a.id == achievementId);
-    
+
+    // Verifica se já está desbloqueada
+    achievement.isUnlocked =
+        prefs.getBool('achievement_${achievement.id}') ?? false;
+
     if (!achievement.isUnlocked) {
       achievement.isUnlocked = true;
       await prefs.setBool('achievement_${achievement.id}', true);
@@ -82,37 +95,37 @@ class AchievementManager {
     }
   }
 
-  static Future<void> _showAchievementNotification(Achievement achievement) async {
+  static Future<void> _showAchievementNotification(
+      Achievement achievement) async {
     final context = navigatorKey.currentContext;
     if (context != null) {
       await SoundManager.playSound('achievement');
-      
+
       AchievementView(
-        title: achievement.title,
-        subTitle: "${achievement.points}G",
-        icon: Icon(
-          Icons.emoji_events,
-          color: Colors.amber,
-        ),
-        color: Colors.black87,
-        borderRadius: BorderRadius.circular(8),
-        textStyleTitle: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 14,
-        ),
-        textStyleSubTitle: TextStyle(
-          color: Colors.green,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-        alignment: Alignment.topCenter,
-        duration: Duration(milliseconds: 7500),
-        isCircle: false,
-        listener: (status) {
-          print(status);
-        }
-      ).show(context);
+          title: achievement.title,
+          subTitle: "${achievement.points}G",
+          icon: Icon(
+            Icons.emoji_events,
+            color: Colors.amber,
+          ),
+          color: Colors.black87,
+          borderRadius: BorderRadius.circular(8),
+          textStyleTitle: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+          textStyleSubTitle: TextStyle(
+            color: Colors.green,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+          alignment: Alignment.topCenter,
+          duration: Duration(milliseconds: 7500),
+          isCircle: false,
+          listener: (status) {
+            print(status);
+          }).show(context);
     }
   }
 

@@ -1,7 +1,29 @@
 import 'package:flutter/material.dart';
 import 'achievement_manager.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class AchievementsPage extends StatelessWidget {
+class AchievementsPage extends StatefulWidget {
+  @override
+  _AchievementsPageState createState() => _AchievementsPageState();
+}
+
+class _AchievementsPageState extends State<StatefulWidget> {
+  @override
+  void initState() {
+    super.initState();
+    _loadAchievements();
+  }
+
+  Future<void> _loadAchievements() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      for (var achievement in AchievementManager.achievements) {
+        achievement.isUnlocked =
+            prefs.getBool('achievement_${achievement.id}') ?? false;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

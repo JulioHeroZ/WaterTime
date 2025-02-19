@@ -68,6 +68,8 @@ class DataManager {
     // Toca o som de adição de água
     if (amount > 0) {
       await SoundManager.playSound('add_water');
+      // Verifica a primeira conquista
+      await AchievementManager.checkAchievement('first_water');
     } else {
       await SoundManager.playSound('remove_water');
     }
