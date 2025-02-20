@@ -49,6 +49,7 @@ dependencies:
   audioplayers: ^5.2.1
   auto_updater: ^1.0.0
   flutter_distributor: 0.4.5
+  msix: ^3.16.7
   
 dev_dependencies:
   flutter_test:
@@ -122,3 +123,12 @@ flutter:
     - assets/sounds/goal_complete.mp3
     - assets/sounds/notification.mp3
     - assets/sounds/achievement.mp3
+
+msix_config:
+  display_name: WaterTime
+  publisher_display_name: Julio Vitor Rufino
+  identity_name: com.hz.watertime
+  publisher: CN=Julio Vitor Rufino
+  msix_version: 1.3.0.0
+  logo_path: assets/Logo.png
+  capabilities: internetClient
