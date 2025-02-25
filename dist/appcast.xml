@@ -7,11 +7,11 @@
         <item>
             <title>Versão 2.0.0</title>
             <sparkle:releaseNotesLink>
-                https://github.com/JulioHeroZ/WaterTime/releases/tag/v1.3.0
+                https://github.com/JulioHeroZ/WaterTime/releases/tag/v2.0.0
             </sparkle:releaseNotesLink>
             <pubDate>Sun, 16 Feb 2024 12:00:00 +0800</pubDate>
             <enclosure 
-                url="https://raw.githubusercontent.com/JulioHeroZ/WaterTime/release/dist/1.3.0+1/watertime-1.3.0+1-windows-setup.exe"
+                url="https://raw.githubusercontent.com/JulioHeroZ/WaterTime/release/dist/2.0.0+1/watertime-2.0.0+1-windows-setup.exe"
                 sparkle:dsaSignature="MDwCHD017gX4rXHn+kqnNo8ErhpPvOqNW2b61A9pnxcCHH+5M3bgmeBAJIV8w69dBR+8qZzzIvzJp/+Tlgc="
                 sparkle:version="2.0.0+1"
                 sparkle:os="windows"
