@@ -1,52 +1,80 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../data_manager.dart'; // Atualização da importação
+import '../tray_manager.dart';
+import '../widgets/close_button_widget.dart';
 
 class HistoricoPage extends StatelessWidget {
-  const HistoricoPage({super.key});
+  final TrayManager? trayManager;
+
+  const HistoricoPage({
+    super.key,
+    this.trayManager,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Histórico de Consumo'),
-      ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: DataManager.getHistory(), // Atualizado para utilizar getHistory
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return const Center(child: Text('Erro ao carregar o histórico'));
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Nenhum registro encontrado'));
-          }
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              AppBar(
+                title: const Text(
+                  'Histórico',
+                  style: TextStyle(color: Colors.white),
+                ),
+                iconTheme: const IconThemeData(color: Colors.white),
+                backgroundColor: const Color.fromARGB(255, 95, 189, 212),
+              ),
+              Expanded(
+                child: FutureBuilder<List<Map<String, dynamic>>>(
+                  future: DataManager.getHistory(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-          // Ordenar o histórico por data, do mais recente para o mais antigo
-          final sortedHistory = snapshot.data!
-            ..sort((a, b) {
-              DateTime dateA = DateTime.parse(a['date']);
-              DateTime dateB = DateTime.parse(b['date']);
-              return dateB.compareTo(dateA);
-            });
+                    if (snapshot.hasError) {
+                      return Center(child: Text('Erro: ${snapshot.error}'));
+                    }
 
-          return ListView.builder(
-            itemCount: sortedHistory.length,
-            itemBuilder: (context, index) {
-              final registro = sortedHistory[index];
-              final DateTime date = DateTime.parse(registro['date']);
-              final int quantidade = registro['amount'];
+                    final history = snapshot.data ?? [];
 
-              return ListTile(
-                leading: const Icon(Icons.calendar_today),
-                title: Text(DateFormat('dd/MM/yyyy').format(date)),
-                trailing: Text('$quantidade ml'),
-              );
-            },
-          );
-        },
+                    if (history.isEmpty) {
+                      return const Center(
+                          child: Text('Nenhum registro encontrado'));
+                    }
+
+                    return ListView.builder(
+                      itemCount: history.length,
+                      itemBuilder: (context, index) {
+                        final item = history[index];
+                        final date = DateTime.parse(item['date']);
+                        final amount = item['amount'];
+
+                        return ListTile(
+                          title: Text(
+                            '${date.day}/${date.month}/${date.year}',
+                            style: const TextStyle(fontSize: 18),
+                          ),
+                          trailing: Text(
+                            '$amount ml',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+          CustomCloseButton(trayManager: trayManager),
+        ],
       ),
     );
   }

@@ -6,11 +6,11 @@ class AnimatedWaterGlass extends StatefulWidget {
   final double width;
 
   const AnimatedWaterGlass({
-    Key? key,
+    super.key,
     required this.progress,
     this.height = 200,
     this.width = 120,
-  }) : super(key: key);
+  });
 
   @override
   State<AnimatedWaterGlass> createState() => _AnimatedWaterGlassState();
@@ -25,7 +25,7 @@ class _AnimatedWaterGlassState extends State<AnimatedWaterGlass>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
     _animation = Tween<double>(
@@ -67,7 +67,7 @@ class _AnimatedWaterGlassState extends State<AnimatedWaterGlass>
       child: CustomPaint(
         painter: _WaterGlassPainter(
           animation: _animation,
-          color: Color.fromARGB(255, 64, 187, 224),
+          color: const Color.fromARGB(255, 64, 187, 224),
         ),
       ),
     );
@@ -93,9 +93,9 @@ class _WaterGlassPainter extends CustomPainter {
     // Constantes ajustadas para o copo
     final topY = size.height * 0.1;
     final bottomY = size.height * 0.95;
-    final topWidth = size.width * 0.6;    // Topo mais estreito
-    final bottomWidth = size.width * 0.5;  // Base mais estreita
-    
+    final topWidth = size.width * 0.6; // Topo mais estreito
+    final bottomWidth = size.width * 0.5; // Base mais estreita
+
     final leftTopX = (size.width - topWidth) / 2;
     final rightTopX = leftTopX + topWidth;
     final leftBottomX = (size.width - bottomWidth) / 2;
@@ -113,7 +113,8 @@ class _WaterGlassPainter extends CustomPainter {
 
     // Calcula a altura da água
     final maxWaterHeight = size.height * 0.85;
-    final waterHeight = (maxWaterHeight * animation.value).clamp(0.0, maxWaterHeight);
+    final waterHeight =
+        (maxWaterHeight * animation.value).clamp(0.0, maxWaterHeight);
     final waterBottom = bottomY;
     final waterTop = waterBottom - waterHeight;
 
@@ -142,7 +143,7 @@ class _WaterGlassPainter extends CustomPainter {
       ..lineTo(rightTopX, topY)
       ..close();
 
-    canvas.clipPath(clipPath);  // Aplica o clipping
+    canvas.clipPath(clipPath); // Aplica o clipping
     canvas.drawPath(waterPath, waterPaint);
 
     // Reflexo simplificado

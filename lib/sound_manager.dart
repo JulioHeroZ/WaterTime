@@ -1,11 +1,13 @@
 import 'package:audioplayers/audioplayers.dart';
-import 'sound_manager.dart';
 
 class SoundManager {
   static final AudioPlayer _player = AudioPlayer();
-  
+
   static Future<void> playSound(String soundType) async {
     try {
+      // Libera qualquer recurso anterior
+      await _player.stop();
+
       switch (soundType) {
         case 'add_water':
           await _player.play(AssetSource('sounds/water_add.mp3'));
@@ -23,8 +25,14 @@ class SoundManager {
           await _player.play(AssetSource('sounds/achievement.mp3'));
           break;
       }
+
+      // Aguarda o som terminar de tocar
+      await Future.delayed(const Duration(seconds: 1));
+      await _player.stop();
     } catch (e) {
       print('Erro ao tocar som: $e');
+      // Tenta liberar o recurso em caso de erro
+      await _player.stop();
     }
   }
 }

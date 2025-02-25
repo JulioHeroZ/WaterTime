@@ -3,8 +3,17 @@ import 'package:fl_chart/fl_chart.dart';
 import '../data_manager.dart';
 import 'dart:math';
 import '../achievements/achievement_manager.dart';
+import '../tray_manager.dart';
+import '../widgets/close_button_widget.dart';
 
 class StatisticsPage extends StatefulWidget {
+  final TrayManager? trayManager;
+
+  const StatisticsPage({
+    super.key,
+    this.trayManager,
+  });
+
   @override
   _StatisticsPageState createState() => _StatisticsPageState();
 }
@@ -14,7 +23,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
   int _streak = 0;
   double _averageConsumption = 0;
   Map<int, int> _frequentHours = {};
-  
+
   @override
   void initState() {
     super.initState();
@@ -24,7 +33,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
   Future<void> _loadStatistics() async {
     final history = await DataManager.getHistory();
     final additions = await DataManager.getAdditions();
-    
+
     setState(() {
       _history = history;
       _calculateStreak();
@@ -35,18 +44,18 @@ class _StatisticsPageState extends State<StatisticsPage> {
 
   void _calculateStreak() {
     int streak = 0;
-    final dailyGoal = 2000;
+    const dailyGoal = 2000;
     DateTime currentDate = DateTime.now();
-    
+
     for (var entry in _history.reversed) {
       final date = DateTime.parse(entry['date']);
       final amount = entry['amount'] as int;
-      
-      if (amount >= dailyGoal && 
+
+      if (amount >= dailyGoal &&
           date.difference(currentDate).inDays.abs() <= 1) {
         streak++;
-        currentDate = currentDate.subtract(Duration(days: 1));
-        
+        currentDate = currentDate.subtract(const Duration(days: 1));
+
         if (streak == 3) {
           AchievementManager.checkAchievement('streak_3');
         }
@@ -59,62 +68,78 @@ class _StatisticsPageState extends State<StatisticsPage> {
 
   void _calculateAverage() {
     if (_history.isEmpty) return;
-    
-    final total = _history.fold<int>(
-      0, (sum, entry) => sum + (entry['amount'] as int));
+
+    final total =
+        _history.fold<int>(0, (sum, entry) => sum + (entry['amount'] as int));
     _averageConsumption = total / _history.length;
   }
 
   void _calculateFrequentHours(List<Map<String, dynamic>> additions) {
     Map<String, int> hourCount = {};
-    
+
     // Primeiro, vamos mapear todas as adições com seus timestamps como chaves
     for (var addition in additions) {
       final timestamp = addition['timestamp'] as String;
       final hour = DateTime.parse(timestamp).hour;
       final amount = addition['amount'] as int;
-      
-      if (amount > 0) { // Considera apenas adições positivas
+
+      if (amount > 0) {
+        // Considera apenas adições positivas
         hourCount[timestamp] = hour;
-      } else { // Se for uma remoção (amount negativo)
+      } else {
+        // Se for uma remoção (amount negativo)
         // Remove a contagem correspondente
         hourCount.remove(timestamp);
       }
     }
-    
+
     // Agora contamos a frequência das horas que permaneceram
     _frequentHours = {};
-    hourCount.values.forEach((hour) {
+    for (var hour in hourCount.values) {
       _frequentHours[hour] = (_frequentHours[hour] ?? 0) + 1;
-    });
-    
+    }
+
     // Ordena o mapa por frequência
-    _frequentHours = Map.fromEntries(
-      _frequentHours.entries.toList()
-        ..sort((a, b) => b.value.compareTo(a.value))
-    );
+    _frequentHours = Map.fromEntries(_frequentHours.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Estatísticas'),
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildStreakCard(),
-            SizedBox(height: 16),
-            _buildWeeklyChart(),
-            SizedBox(height: 16),
-            _buildAverageCard(),
-            SizedBox(height: 16),
-            _buildFrequentHoursChart(),
-          ],
-        ),
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              AppBar(
+                title: const Text(
+                  'Estatísticas',
+                  style: TextStyle(color: Colors.white),
+                ),
+                iconTheme: const IconThemeData(color: Colors.white),
+                backgroundColor: const Color.fromARGB(255, 95, 189, 212),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildStreakCard(),
+                      const SizedBox(height: 16),
+                      _buildWeeklyChart(),
+                      const SizedBox(height: 16),
+                      _buildAverageCard(),
+                      const SizedBox(height: 16),
+                      _buildFrequentHoursChart(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          CustomCloseButton(trayManager: widget.trayManager),
+        ],
       ),
     );
   }
@@ -122,26 +147,26 @@ class _StatisticsPageState extends State<StatisticsPage> {
   Widget _buildStreakCard() {
     return Card(
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Sequência Atual',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Row(
               children: [
-                Icon(Icons.local_fire_department, 
-                     color: Colors.orange, size: 32),
-                SizedBox(width: 8),
+                const Icon(Icons.local_fire_department,
+                    color: Colors.orange, size: 32),
+                const SizedBox(width: 8),
                 Text(
                   '$_streak dias',
-                  style: TextStyle(fontSize: 24),
+                  style: const TextStyle(fontSize: 24),
                 ),
               ],
             ),
@@ -154,18 +179,18 @@ class _StatisticsPageState extends State<StatisticsPage> {
   Widget _buildWeeklyChart() {
     return Card(
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Consumo Semanal',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             SizedBox(
               height: 200,
               child: BarChart(
@@ -178,7 +203,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
                         return BarTooltipItem(
                           '${rod.toY.round()} ml',
-                          TextStyle(color: Colors.white),
+                          const TextStyle(color: Colors.white),
                         );
                       },
                     ),
@@ -189,7 +214,15 @@ class _StatisticsPageState extends State<StatisticsPage> {
                       sideTitles: SideTitles(
                         showTitles: true,
                         getTitlesWidget: (value, meta) {
-                          final weekDays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+                          final weekDays = [
+                            'Seg',
+                            'Ter',
+                            'Qua',
+                            'Qui',
+                            'Sex',
+                            'Sáb',
+                            'Dom'
+                          ];
                           return Text(weekDays[value.toInt()]);
                         },
                       ),
@@ -204,7 +237,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                             padding: const EdgeInsets.only(right: 8),
                             child: Text(
                               '${value.toInt()} ml',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 11,
                               ),
                             ),
@@ -212,10 +245,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
                         },
                       ),
                     ),
-                    rightTitles: AxisTitles(
+                    rightTitles: const AxisTitles(
                       sideTitles: SideTitles(showTitles: false),
                     ),
-                    topTitles: AxisTitles(
+                    topTitles: const AxisTitles(
                       sideTitles: SideTitles(showTitles: false),
                     ),
                   ),
@@ -235,11 +268,11 @@ class _StatisticsPageState extends State<StatisticsPage> {
   Widget _buildFrequentHoursChart() {
     return Card(
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Horários Mais Frequentes de Consumo',
               style: TextStyle(
                 fontSize: 18,
@@ -253,7 +286,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                 color: Colors.grey[600],
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             SizedBox(
               height: 200,
               child: LineChart(
@@ -265,7 +298,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                       color: Theme.of(context).primaryColor,
                       barWidth: 4,
                       isStrokeCapRound: true,
-                      dotData: FlDotData(show: true),
+                      dotData: const FlDotData(show: true),
                       belowBarData: BarAreaData(
                         show: true,
                         color: Theme.of(context).primaryColor.withOpacity(0.2),
@@ -279,7 +312,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                         return touchedSpots.map((LineBarSpot spot) {
                           return LineTooltipItem(
                             '${spot.y.toInt()}x às ${spot.x.toInt()}:00h',
-                            TextStyle(color: Colors.white),
+                            const TextStyle(color: Colors.white),
                           );
                         }).toList();
                       },
@@ -305,7 +338,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                             padding: const EdgeInsets.only(right: 8),
                             child: Text(
                               '${value.toInt()}x',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 11,
                               ),
                             ),
@@ -313,14 +346,14 @@ class _StatisticsPageState extends State<StatisticsPage> {
                         },
                       ),
                     ),
-                    rightTitles: AxisTitles(
+                    rightTitles: const AxisTitles(
                       sideTitles: SideTitles(showTitles: false),
                     ),
-                    topTitles: AxisTitles(
+                    topTitles: const AxisTitles(
                       sideTitles: SideTitles(showTitles: false),
                     ),
                   ),
-                  gridData: FlGridData(show: false),
+                  gridData: const FlGridData(show: false),
                   borderData: FlBorderData(show: false),
                 ),
               ),
@@ -334,25 +367,25 @@ class _StatisticsPageState extends State<StatisticsPage> {
   Widget _buildAverageCard() {
     return Card(
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Média Diária',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Row(
               children: [
-                Icon(Icons.water_drop, color: Colors.blue, size: 32),
-                SizedBox(width: 8),
+                const Icon(Icons.water_drop, color: Colors.blue, size: 32),
+                const SizedBox(width: 8),
                 Text(
                   '${_averageConsumption.round()} ml',
-                  style: TextStyle(fontSize: 24),
+                  style: const TextStyle(fontSize: 24),
                 ),
               ],
             ),
@@ -371,17 +404,16 @@ class _StatisticsPageState extends State<StatisticsPage> {
   List<BarChartGroupData> _getWeeklyData() {
     final now = DateTime.now();
     final currentWeekDay = now.weekday; // 1 (Segunda) até 7 (Domingo)
-    
+
     final weekData = List.generate(7, (index) {
       // Calcula quantos dias precisamos voltar para cada posição
       final daysToSubtract = currentWeekDay - (index + 1);
       final date = now.subtract(Duration(days: daysToSubtract));
       final dateStr = date.toIso8601String().split('T')[0];
-      
-      final consumption = _history
-          .firstWhere((e) => e['date'] == dateStr, 
-                      orElse: () => {'amount': 0})['amount'] as int;
-      
+
+      final consumption = _history.firstWhere((e) => e['date'] == dateStr,
+          orElse: () => {'amount': 0})['amount'] as int;
+
       return BarChartGroupData(
         x: index,
         barRods: [
@@ -394,7 +426,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
         ],
       );
     });
-    
+
     return weekData;
   }
 

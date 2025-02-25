@@ -9,40 +9,38 @@ class WaterSelectionDialog extends StatelessWidget {
   final void Function(List<CustomAmount>) updateCustomAmounts;
 
   const WaterSelectionDialog({
-    Key? key,
+    super.key,
     required this.customAmounts,
     required this.addWater,
     required this.updateCustomAmounts,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Selecione a quantidade de água'),
+      title: const Text('Selecione a quantidade de água'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             _waterButton(context, 250),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             _waterButton(context, 500),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             _waterButton(context, 600),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             _waterButton(context, 1000),
-            SizedBox(height: 20),
-            ...customAmounts
-                .map((customAmount) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _waterButton(context, customAmount.amount,
-                          isCustom: true, customAmountId: customAmount.id),
-                    ))
-                .toList(),
+            const SizedBox(height: 20),
+            ...customAmounts.map((customAmount) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _waterButton(context, customAmount.amount,
+                      isCustom: true, customAmountId: customAmount.id),
+                )),
             ElevatedButton(
               onPressed: () async {
                 await _showAddCustomAmountDialog(context);
               },
-              child: Text('Adicionar quantidade personalizada'),
+              child: const Text('Adicionar quantidade personalizada'),
             ),
           ],
         ),
@@ -57,15 +55,25 @@ class WaterSelectionDialog extends StatelessWidget {
         Expanded(
           child: ElevatedButton(
             onPressed: () async {
+              final navigator = Navigator.of(context);
               await addWater(amount);
-              Navigator.of(context).pop();
+              if (context.mounted) {
+                navigator.pop();
+              }
             },
-            child: Text('$amount ml'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2893eb),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            ),
+            child: Text(
+              '$amount ml',
+              style: const TextStyle(color: Colors.white),
+            ),
           ),
         ),
         if (isCustom)
           IconButton(
-            icon: Icon(Icons.edit),
+            icon: const Icon(Icons.edit),
             onPressed: () =>
                 _showEditCustomAmountDialog(context, customAmountId!, amount),
           ),
@@ -79,16 +87,16 @@ class WaterSelectionDialog extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Adicionar quantidade personalizada'),
+          title: const Text('Adicionar quantidade personalizada'),
           content: TextField(
             controller: controller,
             keyboardType: TextInputType.number,
-            decoration: InputDecoration(labelText: 'Quantidade (ml)'),
+            decoration: const InputDecoration(labelText: 'Quantidade (ml)'),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancelar'),
+              child: const Text('Cancelar'),
             ),
             ElevatedButton(
               onPressed: () {
@@ -100,7 +108,7 @@ class WaterSelectionDialog extends StatelessWidget {
                   Navigator.of(context).pop();
                 }
               },
-              child: Text('Adicionar'),
+              child: const Text('Adicionar'),
             ),
           ],
         );
@@ -116,16 +124,16 @@ class WaterSelectionDialog extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Editar quantidade personalizada'),
+          title: const Text('Editar quantidade personalizada'),
           content: TextField(
             controller: controller,
             keyboardType: TextInputType.number,
-            decoration: InputDecoration(labelText: 'Quantidade (ml)'),
+            decoration: const InputDecoration(labelText: 'Quantidade (ml)'),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancelar'),
+              child: const Text('Cancelar'),
             ),
             ElevatedButton(
               onPressed: () {
@@ -138,7 +146,7 @@ class WaterSelectionDialog extends StatelessWidget {
                   Navigator.of(context).pop();
                 }
               },
-              child: Text('Salvar'),
+              child: const Text('Salvar'),
             ),
             TextButton(
               onPressed: () {
@@ -146,8 +154,8 @@ class WaterSelectionDialog extends StatelessWidget {
                 updateCustomAmounts(customAmounts);
                 Navigator.of(context).pop();
               },
-              child: Text('Excluir'),
               style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Excluir'),
             ),
           ],
         );

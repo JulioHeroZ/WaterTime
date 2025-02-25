@@ -5,12 +5,13 @@ class AchievementNotification extends StatefulWidget {
   final Achievement achievement;
 
   const AchievementNotification({
-    Key? key,
+    super.key,
     required this.achievement,
-  }) : super(key: key);
+  });
 
   @override
-  State<AchievementNotification> createState() => _AchievementNotificationState();
+  State<AchievementNotification> createState() =>
+      _AchievementNotificationState();
 }
 
 class _AchievementNotificationState extends State<AchievementNotification>
@@ -25,35 +26,35 @@ class _AchievementNotificationState extends State<AchievementNotification>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
 
     _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: Interval(0.0, 0.5, curve: Curves.elasticOut),
+        curve: const Interval(0.0, 0.5, curve: Curves.elasticOut),
       ),
     );
 
     _widthAnimation = Tween<double>(begin: 50.0, end: 250.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: Interval(0.3, 0.6, curve: Curves.easeOut),
+        curve: const Interval(0.3, 0.6, curve: Curves.easeOut),
       ),
     );
 
     _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: Interval(0.3, 0.6, curve: Curves.easeIn),
+        curve: const Interval(0.3, 0.6, curve: Curves.easeIn),
       ),
     );
 
     _positionAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: Interval(0.3, 0.6, curve: Curves.easeOut),
+        curve: const Interval(0.3, 0.6, curve: Curves.easeOut),
       ),
     );
 
@@ -70,26 +71,27 @@ class _AchievementNotificationState extends State<AchievementNotification>
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final cupCenter = screenWidth / 2;
-    
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
         final showText = _widthAnimation.value > 80;
-        
+
         final startPosition = cupCenter - 25;
         final endPosition = cupCenter - _widthAnimation.value + 40;
-        
-        final currentPosition = startPosition + (endPosition - startPosition) * _positionAnimation.value;
-        
+
+        final currentPosition = startPosition +
+            (endPosition - startPosition) * _positionAnimation.value;
+
         return Positioned(
           top: 100,
           left: currentPosition,
           child: Material(
             color: Colors.transparent,
             child: Container(
-              constraints: BoxConstraints(maxWidth: 250),
+              constraints: const BoxConstraints(maxWidth: 250),
               width: _widthAnimation.value,
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.black87,
                 borderRadius: BorderRadius.circular(8),
@@ -101,7 +103,7 @@ class _AchievementNotificationState extends State<AchievementNotification>
                     children: [
                       Transform.scale(
                         scale: _scaleAnimation.value,
-                        child: Icon(
+                        child: const Icon(
                           Icons.emoji_events,
                           size: 32,
                           color: Colors.amber,
@@ -114,7 +116,7 @@ class _AchievementNotificationState extends State<AchievementNotification>
                               maxWidth: constraints.maxWidth - 48,
                             ),
                             child: Padding(
-                              padding: EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.only(left: 8),
                               child: Opacity(
                                 opacity: _opacityAnimation.value,
                                 child: Column(
@@ -123,7 +125,7 @@ class _AchievementNotificationState extends State<AchievementNotification>
                                   children: [
                                     Text(
                                       widget.achievement.title,
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 14,
@@ -133,7 +135,7 @@ class _AchievementNotificationState extends State<AchievementNotification>
                                     ),
                                     Text(
                                       '${widget.achievement.points}G',
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         color: Colors.green,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 12,

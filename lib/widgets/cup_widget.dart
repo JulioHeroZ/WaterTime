@@ -5,10 +5,10 @@ class CupWidget extends StatelessWidget {
   final double dailyGoal;
 
   const CupWidget({
-    Key? key,
+    super.key,
     required this.currentIntake,
     required this.dailyGoal,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

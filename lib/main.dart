@@ -5,14 +5,25 @@ import 'water_reminder_app.dart';
 import 'tray_manager.dart';
 import 'notification_manager.dart';
 import 'achievements/achievement_manager.dart';
+import 'services/auth_service.dart';
+import 'services/sync_service.dart';
+import 'package:provider/provider.dart';
+import 'theme_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inicializa as conquistas
+  await AuthService.initialize();
+  SyncService.startPeriodicSync();
   await AchievementManager.initializeAchievements();
 
-  // Configuração do auto updater
+  final notificationManager = NotificationManager();
+  await notificationManager.initializeNotifications();
+
+  TrayManager? trayManager;
+
+  await windowManager.ensureInitialized();
+
   String feedURL =
       'https://raw.githubusercontent.com/JulioHeroZ/WaterTime/release/dist/appcast.xml'; // URL do seu servidor de updates
   await autoUpdater.setFeedURL(feedURL);
@@ -29,20 +40,26 @@ void main() async {
     titleBarStyle: TitleBarStyle.hidden,
     minimumSize: Size(400, 700),
   );
-  windowManager.waitUntilReadyToShow(windowOptions, () async {
+
+  await windowManager.waitUntilReadyToShow(windowOptions, () async {
     await windowManager.show();
     await windowManager.focus();
   });
 
-  final trayManager = TrayManager();
+  trayManager = TrayManager();
   await trayManager.initSystemTray();
 
-  // Inicialize o NotificationManager aqui
-  final notificationManager = NotificationManager();
-  await notificationManager.initializeNotifications();
+  final themeManager = ThemeManager();
 
-  runApp(WaterReminderApp(
-    trayManager: trayManager,
-    notificationManager: notificationManager,
-  ));
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<ThemeManager>.value(value: themeManager),
+      ],
+      child: WaterReminderApp(
+        trayManager: trayManager,
+        notificationManager: notificationManager,
+      ),
+    ),
+  );
 }

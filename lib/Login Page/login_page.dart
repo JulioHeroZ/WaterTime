@@ -1,187 +1,328 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 import '../Utils/colors.dart';
+import '../Home Page/water_reminder_home_page.dart';
+import '../services/sync_service.dart';
 
-class SignIn extends StatelessWidget {
-  const SignIn({super.key});
+class LoginPage extends StatefulWidget {
+  final dynamic trayManager;
+  final dynamic notificationManager;
+
+  const LoginPage({
+    super.key,
+    required this.trayManager,
+    required this.notificationManager,
+  });
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _nameController = TextEditingController();
+  bool _isLoading = false;
+  bool _isLoginMode = true;
 
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-        backgroundColor: Colors.transparent,
-      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
-            colors: [
-              backgroundColor2,
-              backgroundColor2,
-              backgroundColor4,
-            ],
+            colors: [backgroundColor2, backgroundColor2, backgroundColor4],
           ),
         ),
         child: SafeArea(
-            child: ListView(
-          children: [
-            SizedBox(height: size.height * 0.07),
-            Text(
-              "Bem vindo!",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 27, color: textColor2, height: 1.2),
-            ),
-            SizedBox(height: size.height * 0.04),
-            // for username and password
-            myTextField("Login", Colors.white),
-            myTextField("Senha", Colors.black26),
-            const SizedBox(height: 10),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                "Recuperar Senha               ",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: textColor2,
+          child: Stack(
+            children: [
+              // Conteúdo principal
+              SingleChildScrollView(
+                padding: const EdgeInsets.only(
+                  top: 60, // Adicionar espaço para o botão voltar
+                  left: 24,
+                  right: 24,
+                  bottom: 24,
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 40),
+                      // Logo ou Ícone
+                      Icon(
+                        Icons.water_drop,
+                        size: 80,
+                        color: textColor2,
+                      ),
+                      const SizedBox(height: 30),
+                      // Título
+                      Text(
+                        _isLoginMode ? "Bem-vindo de volta!" : "Criar conta",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: textColor2,
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                      // Campos de entrada
+                      if (!_isLoginMode) _buildNameField(),
+                      const SizedBox(height: 16),
+                      _buildEmailField(),
+                      const SizedBox(height: 16),
+                      _buildPasswordField(),
+                      const SizedBox(height: 24),
+                      // Botão principal
+                      _buildMainButton(),
+                      const SizedBox(height: 16),
+                      // Alternar entre login e registro
+                      _buildToggleModeButton(),
+                      const SizedBox(height: 32),
+                      // Divisor
+                      _buildDivider(),
+                      const SizedBox(height: 32),
+                      // Botões de mídia social
+                      _buildSocialButtons(),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            SizedBox(height: size.height * 0.04),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25),
-              child: Column(
-                children: [
-                  // for sign in button
-                  Container(
-                    width: size.width,
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    decoration: BoxDecoration(
-                      color: buttonColor,
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        "Entrar",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          fontSize: 22,
+              // Botão Voltar
+              Positioned(
+                top: 10,
+                left: 10,
+                child: Material(
+                  color: Colors.transparent,
+                  child: IconButton(
+                    icon: Icon(Icons.arrow_back_ios, color: textColor2),
+                    onPressed: () {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (context) => WaterReminderHomePage(
+                            trayManager: widget.trayManager,
+                            notificationManager: widget.notificationManager,
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
-                  SizedBox(height: size.height * 0.06),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        height: 2,
-                        width: size.width * 0.2,
-                        color: Colors.black12,
-                      ),
-                      Text(
-                        "  Ou continue com   ",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: textColor2,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Container(
-                        height: 2,
-                        width: size.width * 0.2,
-                        color: Colors.black12,
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: size.height * 0.06),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      socialIcon("assets/images/google.png"),
-                      socialIcon("assets/images/apple.png"),
-                      socialIcon("assets/images/facebook.png"),
-                    ],
-                  ),
-                  SizedBox(height: size.height * 0.03),
-                  Text.rich(
-                    TextSpan(
-                        text: "Não se cadastrou? ",
-                        style: TextStyle(
-                          color: textColor2,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                        children: const [
-                          TextSpan(
-                            text: "Cadastrar",
-                            style: TextStyle(
-                              color: Colors.blue,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          )
-                        ]),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ],
-        )),
-      ),
-    );
-  }
-
-  Container socialIcon(image) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 32,
-        vertical: 15,
-      ),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.white,
-          width: 2,
+            ],
+          ),
         ),
       ),
-      child: Image.asset(
-        image,
-        height: 35,
+    );
+  }
+
+  Widget _buildNameField() {
+    return TextFormField(
+      controller: _nameController,
+      decoration: InputDecoration(
+        hintText: 'Nome completo',
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        prefixIcon: const Icon(Icons.person_outline),
+      ),
+      validator: (value) =>
+          value?.isEmpty ?? true ? 'Por favor, insira seu nome' : null,
+    );
+  }
+
+  Widget _buildEmailField() {
+    return TextFormField(
+      controller: _emailController,
+      keyboardType: TextInputType.emailAddress,
+      decoration: InputDecoration(
+        hintText: 'Email',
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        prefixIcon: const Icon(Icons.email_outlined),
+      ),
+      validator: (value) =>
+          value?.isEmpty ?? true ? 'Por favor, insira seu email' : null,
+    );
+  }
+
+  Widget _buildPasswordField() {
+    return TextFormField(
+      controller: _passwordController,
+      obscureText: true,
+      decoration: InputDecoration(
+        hintText: 'Senha',
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        prefixIcon: const Icon(Icons.lock_outline),
+      ),
+      validator: (value) =>
+          value?.isEmpty ?? true ? 'Por favor, insira sua senha' : null,
+    );
+  }
+
+  Widget _buildMainButton() {
+    return ElevatedButton(
+      onPressed: _isLoading ? null : _handleSubmit,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: buttonColor,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      child: _isLoading
+          ? const CircularProgressIndicator(color: Colors.white)
+          : Text(
+              _isLoginMode ? 'Entrar' : 'Cadastrar',
+              style: const TextStyle(fontSize: 18),
+            ),
+    );
+  }
+
+  Widget _buildToggleModeButton() {
+    return TextButton(
+      onPressed: () => setState(() => _isLoginMode = !_isLoginMode),
+      child: Text(
+        _isLoginMode
+            ? 'Não tem uma conta? Cadastre-se'
+            : 'Já tem uma conta? Entre',
+        style: TextStyle(color: textColor2),
       ),
     );
   }
 
-  Container myTextField(String hint, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 25,
-        vertical: 10,
+  Widget _buildDivider() {
+    return Row(
+      children: [
+        Expanded(child: Divider(color: textColor2.withOpacity(0.3))),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'ou continue com',
+            style: TextStyle(color: textColor2),
+          ),
+        ),
+        Expanded(child: Divider(color: textColor2.withOpacity(0.3))),
+      ],
+    );
+  }
+
+  Widget _buildSocialButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _buildSocialButton(
+          'assets/images/google.png',
+          'Google',
+          _handleGoogleSignIn,
+        ),
+        _buildSocialButton(
+          'assets/images/facebook.png',
+          'Facebook',
+          _handleFacebookSignIn,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSocialButton(String icon, String label, VoidCallback onPressed) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Image.asset(icon, height: 24),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 24,
+          vertical: 12,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
-      child: TextField(
-        decoration: InputDecoration(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 22,
+    );
+  }
+
+  Future<void> _handleSubmit() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      setState(() => _isLoading = true);
+      try {
+        final response = _isLoginMode
+            ? await AuthService.login(
+                email: _emailController.text,
+                password: _passwordController.text,
+              )
+            : await AuthService.register(
+                email: _emailController.text,
+                password: _passwordController.text,
+                name: _nameController.text,
+              );
+
+        if (response != null && mounted) {
+          await SyncService.loadFromServer();
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => WaterReminderHomePage(
+                trayManager: widget.trayManager,
+                notificationManager: widget.notificationManager,
+              ),
             ),
-            fillColor: Colors.white,
-            filled: true,
-            border: OutlineInputBorder(
-              borderSide: BorderSide.none,
-              borderRadius: BorderRadius.circular(15),
+          );
+        } else {
+          _showError(
+              _isLoginMode ? 'Erro ao fazer login' : 'Erro ao criar conta');
+        }
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await AuthService.signInWithGoogle();
+      if (response?.session != null && mounted) {
+        await SyncService.loadFromServer();
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => WaterReminderHomePage(
+              trayManager: widget.trayManager,
+              notificationManager: widget.notificationManager,
             ),
-            hintText: hint,
-            hintStyle: const TextStyle(
-              color: Colors.black45,
-              fontSize: 19,
-            ),
-            suffixIcon: Icon(
-              Icons.visibility_off_outlined,
-              color: color,
-            )),
-      ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleFacebookSignIn() async {
+    // Implementar login com Facebook
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 }

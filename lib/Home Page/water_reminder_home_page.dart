@@ -9,24 +9,26 @@ import '../notification_manager.dart';
 import '../custom_amount.dart';
 import '../dialogs.dart';
 import '../Login Page/login_page.dart';
-import '../widgets/cup_widget.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:easy_sidemenu/easy_sidemenu.dart';
 import '../Statistics Page/statistics_page.dart';
 import '../widgets/animated_water_glass.dart';
-import '../achievements/achievement_manager.dart';
 import '../achievements/achievements_page.dart';
 import 'package:auto_updater/auto_updater.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../Profile Page/profile_page.dart';
+import '../services/auth_service.dart';
+import '../services/sync_service.dart';
 
 class WaterReminderHomePage extends StatefulWidget {
-  final TrayManager trayManager;
+  final TrayManager? trayManager;
   final NotificationManager notificationManager;
 
   const WaterReminderHomePage({
-    Key? key,
-    required this.trayManager,
+    super.key,
+    this.trayManager,
     required this.notificationManager,
-  }) : super(key: key);
+  });
 
   @override
   _WaterReminderHomePageState createState() => _WaterReminderHomePageState();
@@ -41,8 +43,8 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
 
   double _notificationInterval = 2.0;
   List<bool> _selectedDays = List.filled(7, true);
-  TimeOfDay _startTime = TimeOfDay(hour: 8, minute: 0);
-  TimeOfDay _endTime = TimeOfDay(hour: 22, minute: 0);
+  TimeOfDay _startTime = const TimeOfDay(hour: 8, minute: 0);
+  TimeOfDay _endTime = const TimeOfDay(hour: 22, minute: 0);
   List<CustomAmount> _customAmounts = [];
   int? _lastAddedAmount;
 
@@ -63,7 +65,7 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
   late AnimationController fourthController;
   late Animation<double> fourthAnimation;
 
-  bool _testAchievementUnlocked = false;
+  final bool _testAchievementUnlocked = false;
 
   @override
   void initState() {
@@ -77,7 +79,7 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
 
     // Inicialização das animações
     firstController = AnimationController(
-        vsync: this, duration: Duration(milliseconds: 1500));
+        vsync: this, duration: const Duration(milliseconds: 1500));
     firstAnimation = Tween<double>(begin: 1.9, end: 2.1).animate(
         CurvedAnimation(parent: firstController, curve: Curves.easeInOut))
       ..addListener(() {
@@ -92,7 +94,7 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
       });
 
     secondController = AnimationController(
-        vsync: this, duration: Duration(milliseconds: 1500));
+        vsync: this, duration: const Duration(milliseconds: 1500));
     secondAnimation = Tween<double>(begin: 1.8, end: 2.4).animate(
         CurvedAnimation(parent: secondController, curve: Curves.easeInOut))
       ..addListener(() {
@@ -107,7 +109,7 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
       });
 
     thirdController = AnimationController(
-        vsync: this, duration: Duration(milliseconds: 1500));
+        vsync: this, duration: const Duration(milliseconds: 1500));
     thirdAnimation = Tween<double>(begin: 1.8, end: 2.4).animate(
         CurvedAnimation(parent: thirdController, curve: Curves.easeInOut))
       ..addListener(() {
@@ -122,7 +124,7 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
       });
 
     fourthController = AnimationController(
-        vsync: this, duration: Duration(milliseconds: 1500));
+        vsync: this, duration: const Duration(milliseconds: 1500));
     fourthAnimation = Tween<double>(begin: 1.9, end: 2.1).animate(
         CurvedAnimation(parent: fourthController, curve: Curves.easeInOut))
       ..addListener(() {
@@ -136,15 +138,15 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
         }
       });
 
-    Timer(Duration(seconds: 2), () {
+    Timer(const Duration(seconds: 2), () {
       firstController.forward();
     });
 
-    Timer(Duration(milliseconds: 1600), () {
+    Timer(const Duration(milliseconds: 1600), () {
       secondController.forward();
     });
 
-    Timer(Duration(milliseconds: 800), () {
+    Timer(const Duration(milliseconds: 800), () {
       thirdController.forward();
     });
 
@@ -171,7 +173,7 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
 
     final now = DateTime.now();
     final nextMidnight =
-        DateTime(now.year, now.month, now.day).add(Duration(days: 1));
+        DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
     final timeUntilMidnight = nextMidnight.difference(now);
 
     _midnightResetTimer = Timer(timeUntilMidnight, () {
@@ -189,27 +191,40 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
   }
 
   Future<void> _loadData() async {
-    final data = await DataManager.loadData();
-    setState(() {
-      _waterConsumed = data['waterConsumed'] ?? 0;
-      _dailyGoal = data['dailyGoal'] ?? 2000;
-      _lastResetDay = DateTime.parse(
-          data['lastResetDay'] ?? DateTime.now().toIso8601String());
-      _lastAddedAmount = data['lastAddedAmount'];
+    try {
+      final data = await DataManager.loadData();
+      final lastAddition = await DataManager
+          .getLastAddition(); // Novo método para pegar última adição
 
-      _notificationInterval = data['notificationInterval'] ?? 2.0;
-      _selectedDays =
-          List<bool>.from(data['selectedDays'] ?? List.filled(7, true));
-      _startTime = TimeOfDay(
-        hour: data['startTimeHour'] ?? 8,
-        minute: data['startTimeMinute'] ?? 0,
-      );
-      _endTime = TimeOfDay(
-        hour: data['endTimeHour'] ?? 22,
-        minute: data['endTimeMinute'] ?? 0,
-      );
-    });
-    _checkAndResetIfNeeded();
+      setState(() {
+        _waterConsumed = (data['waterConsumed'] ?? 0).toInt();
+        _dailyGoal = (data['dailyGoal'] ?? 2000).toInt();
+        _notificationInterval =
+            (data['notificationInterval'] ?? 2.0).toDouble();
+        _selectedDays =
+            List<bool>.from(data['selectedDays'] ?? List.filled(7, true));
+        _startTime = _parseTimeOfDay(data['startTime'] ?? '08:00');
+        _endTime = _parseTimeOfDay(data['endTime'] ?? '22:00');
+        _customAmounts = List<CustomAmount>.from(data['customAmounts'] ?? []);
+        _history = List<Map<String, dynamic>>.from(data['history'] ?? []);
+
+        // Atualiza o último valor adicionado
+        _lastAddedAmount =
+            lastAddition != null ? lastAddition['amount'] as int : null;
+      });
+
+      _checkAndResetIfNeeded();
+    } catch (e) {
+      print('Erro ao carregar dados: $e');
+    }
+  }
+
+  TimeOfDay _parseTimeOfDay(String time) {
+    final parts = time.split(':');
+    return TimeOfDay(
+      hour: int.parse(parts[0]),
+      minute: int.parse(parts[1]),
+    );
   }
 
   void _checkAndResetIfNeeded() {
@@ -231,10 +246,27 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
     await DataManager.saveCustomAmounts(_customAmounts);
   }
 
-  void _scheduleNotifications() {
+  void _scheduleNotifications() async {
     _notificationTimer?.cancel();
-    _notificationTimer = Timer.periodic(Duration(minutes: 1), (timer) {
+    _notificationTimer =
+        Timer.periodic(const Duration(minutes: 1), (timer) async {
+      final now = DateTime.now();
+      const lastNotificationKey = 'last_notification_time';
+      final prefs = await SharedPreferences.getInstance();
+      final lastNotificationTime = prefs.getString(lastNotificationKey);
+
+      if (lastNotificationTime != null) {
+        final lastTime = DateTime.parse(lastNotificationTime);
+        final difference = now.difference(lastTime).inMinutes;
+
+        // Só notifica se passou o intervalo definido
+        if (difference < (_notificationInterval * 60).round()) {
+          return;
+        }
+      }
+
       _checkAndSendNotification();
+      prefs.setString(lastNotificationKey, now.toIso8601String());
     });
   }
 
@@ -282,21 +314,28 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
   }
 
   Future<void> _addWater(int amount) async {
-    setState(() {
-      int previousWaterConsumed = _waterConsumed;
-      _waterConsumed += amount;
-      _lastAddedAmount = amount;
-      if (previousWaterConsumed < _dailyGoal && _waterConsumed >= _dailyGoal) {
-        widget.notificationManager.showNotification(
-          'Meta Atingida!',
-          'Parabéns! Você atingiu sua meta diária de $_dailyGoal ml de água.',
-        );
-      }
-    });
-    await DataManager.addWater(amount);
-    await _loadHistory(); // Recarrega o histórico após adicionar água
+    try {
+      setState(() {
+        int previousWaterConsumed = _waterConsumed;
+        _waterConsumed += amount;
+        _lastAddedAmount = amount;
+        if (previousWaterConsumed < _dailyGoal &&
+            _waterConsumed >= _dailyGoal) {
+          widget.notificationManager.showNotification(
+            'Meta Atingida!',
+            'Parabéns! Você atingiu sua meta diária de $_dailyGoal ml de água.',
+          );
+        }
+      });
 
-    // Verificar marcos e enviar notificações
+      await DataManager.addWater(amount);
+      await _loadHistory();
+    } catch (e) {
+      print('Erro ao adicionar água: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao adicionar água: $e')),
+      );
+    }
   }
 
   Future<void> _removeLastWater() async {
@@ -311,267 +350,322 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
     } else {
       // Informar ao usuário que não há adições para remover
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Nenhuma quantidade para remover')),
+        const SnackBar(content: Text('Nenhuma quantidade para remover')),
       );
     }
   }
 
   Future<void> _loadHistory() async {
-    final history = await DataManager.getHistory();
-    setState(() {
-      _history = history;
-    });
+    try {
+      final history = await DataManager.getHistory();
+      setState(() {
+        _history = history;
+      });
+
+      // Sincroniza com o Supabase se estiver logado
+      if (await AuthService.isUserLoggedIn()) {
+        await SyncService.syncUserData();
+      }
+    } catch (e) {
+      print('Erro ao carregar histórico: $e');
+    }
   }
 
   final SideMenuController _sideMenuController = SideMenuController();
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: isDarkMode ? Colors.grey[900] : Colors.white,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SettingsPage(
+                onSettingsChanged: () {
+                  _loadData();
+                },
+                trayManager: widget.trayManager,
+              ),
+            ),
+          );
+        },
+        heroTag: 'settings',
+        child: const Icon(Icons.settings),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: Row(
         children: [
-          // SideMenu do easy_sidemenu
           SideMenu(
             controller: _sideMenuController,
             style: SideMenuStyle(
-              itemInnerSpacing: 6,
-              itemHeight: 50.0,
-              showTooltip: true,
-              iconSize: 25,
-              compactSideMenuWidth: 60,
-              openSideMenuWidth: 200,
-              itemBorderRadius: const BorderRadius.all(
-                Radius.circular(0.0),
-              ),
               displayMode: SideMenuDisplayMode.auto,
-              hoverColor: const Color.fromARGB(255, 255, 255, 255),
-              selectedColor: const Color.fromARGB(255, 255, 255, 255),
-              selectedTitleTextStyle:
-                  TextStyle(color: const Color.fromARGB(255, 0, 0, 0)),
-              unselectedTitleTextStyle: TextStyle(color: Colors.black),
-              backgroundColor: Color.fromARGB(255, 255, 255, 255),
-              // Adicione mais estilos conforme necessário
+              backgroundColor: isDarkMode ? Colors.grey[850] : Colors.white,
+              selectedColor: const Color.fromARGB(255, 95, 189, 212),
+              unselectedIconColor: isDarkMode ? Colors.white70 : Colors.black54,
+              unselectedTitleTextStyle: TextStyle(
+                color: isDarkMode ? Colors.white70 : Colors.black54,
+              ),
+              selectedTitleTextStyle: const TextStyle(
+                color: Colors.white,
+              ),
+              selectedIconColor: Colors.white,
+              decoration: BoxDecoration(
+                border: Border(
+                  right: BorderSide(
+                    color: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
+                  ),
+                ),
+              ),
             ),
             items: [
               SideMenuItem(
-                title: 'Login (Em Breve)',
+                title: 'Perfil',
                 onTap: (index, _) async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => SignIn()),
-                  );
-                  if (result == true) {
-                    // Usuário fez login com sucesso, recarregar dados
-                    await _loadData();
-                    setState(() {});
+                  final isLoggedIn = await AuthService.isUserLoggedIn();
+                  if (isLoggedIn) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProfilePage(
+                          trayManager: widget.trayManager,
+                          onSettingsChanged: () {
+                            _loadData();
+                          },
+                        ),
+                      ),
+                    );
+                  } else {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LoginPage(
+                          trayManager: widget.trayManager,
+                          notificationManager: widget.notificationManager,
+                        ),
+                      ),
+                    );
+                    if (result == true) {
+                      await _loadData();
+                      setState(() {});
+                    }
                   }
                 },
-                icon: Icon(Ionicons.person_circle_outline),
+                icon: const Icon(Ionicons.person_circle_outline),
               ),
               SideMenuItem(
                 title: 'Histórico',
-                onTap: (index, _) {
-                  Navigator.push(
+                onTap: (index, _) async {
+                  await Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => HistoricoPage()),
+                    MaterialPageRoute(
+                      builder: (context) => HistoricoPage(
+                        trayManager: widget.trayManager,
+                      ),
+                    ),
                   );
-                  _loadData(); // Recarregar dados locais
+                  await _loadHistory(); // Recarrega o histórico após retornar
                   setState(() {});
                 },
-                icon: Icon(Ionicons.calendar_outline),
+                icon: const Icon(Ionicons.calendar_outline),
               ),
               SideMenuItem(
                 title: 'Estatísticas',
                 onTap: (index, _) {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => StatisticsPage()),
+                    MaterialPageRoute(
+                        builder: (context) => const StatisticsPage()),
                   );
                 },
-                icon: Icon(Ionicons.stats_chart_outline),
+                icon: const Icon(Ionicons.stats_chart_outline),
               ),
               SideMenuItem(
                 title: 'Conquistas',
                 onTap: (index, _) {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => AchievementsPage()),
+                    MaterialPageRoute(
+                        builder: (context) => const AchievementsPage()),
                   );
                 },
-                icon: Icon(Icons.emoji_events_outlined),
+                icon: const Icon(Icons.emoji_events_outlined),
+              ),
+              SideMenuItem(
+                title: 'Ranking',
+                onTap: (index, _) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Em breve!'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.leaderboard_outlined),
               ),
               SideMenuItem(
                 title: 'Verificar Atualizações',
                 onTap: (index, _) async {
                   try {
                     await autoUpdater.checkForUpdates();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Verificando atualizações...'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Verificando atualizações...'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
                   } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Erro ao verificar atualizações'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Erro ao verificar atualizações: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   }
                 },
-                icon: Icon(Icons.system_update_outlined),
+                icon: const Icon(Icons.system_update_outlined),
               ),
-
-              // Você pode adicionar mais itens aqui
             ],
           ),
-
           Expanded(
-            child: Scaffold(
-              backgroundColor: Color.fromARGB(255, 250, 250, 250),
-              body: Column(
-                children: [
-                  // Animação de onda substituindo o AppBar
-                  SizedBox(
-                    height: 150, // Altura desejada para a animação
-                    width: double.infinity,
-                    child: Stack(
-                      children: [
-                        CustomPaint(
-                          painter: MyPainter(
-                            firstAnimation.value,
-                            secondAnimation.value,
-                            thirdAnimation.value,
-                            fourthAnimation.value,
-                          ),
-                          child: SizedBox(
-                            height: 150,
-                            width: double.infinity,
+            child: Stack(
+              children: [
+                // Animação de onda substituindo o AppBar
+                SizedBox(
+                  height: 150, // Altura desejada para a animação
+                  width: double.infinity,
+                  child: Stack(
+                    children: [
+                      CustomPaint(
+                        painter: MyPainter(
+                          firstAnimation.value,
+                          secondAnimation.value,
+                          thirdAnimation.value,
+                          fourthAnimation.value,
+                        ),
+                        child: const SizedBox(
+                          height: 150,
+                          width: double.infinity,
+                        ),
+                      ),
+                      Positioned(
+                        top: -30,
+                        left: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onPanStart: (details) {
+                            windowManager.startDragging();
+                          },
+                          child: Image.asset(
+                            'assets/Logo.png',
+                            height: 120, // Ajuste conforme necessário
+                            alignment: Alignment.center,
                           ),
                         ),
-                        Positioned(
-                          top: -30,
-                          left: 0,
-                          right: 0,
-                          child: GestureDetector(
-                            onPanStart: (details) {
-                              windowManager.startDragging();
-                            },
-                            child: Image.asset(
-                              'assets/Logo.png',
-                              height: 120, // Ajuste conforme necessário
-                              alignment: Alignment.center,
-                            ),
-                          ),
+                      ),
+                      Positioned(
+                        right: 10,
+                        top: 10,
+                        child: IconButton(
+                          icon: const Icon(Ionicons.close_outline,
+                              color: Colors.white),
+                          onPressed: () {
+                            widget.trayManager?.minimizeToTray();
+                          },
                         ),
-                        Positioned(
-                          right: 10,
-                          top: 10,
-                          child: IconButton(
-                            icon: Icon(Ionicons.close_outline,
-                                color: Colors.white),
-                            onPressed: () {
-                              widget.trayManager.minimizeToTray();
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  Expanded(
-                    child: GestureDetector(
-                      child: Center(
-                        child: Container(
-                          constraints: BoxConstraints(maxWidth: 400),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: <Widget>[
-                                _buildWaterDisplay(),
-                                SizedBox(height: 16),
-                                Text(
-                                  'Meta diária: $_dailyGoal ml',
-                                  style: TextStyle(
-                                      fontSize: 24,
-                                      color:
-                                          const Color.fromARGB(255, 0, 0, 0)),
-                                  textAlign: TextAlign.center,
-                                ),
-                                SizedBox(height: 16),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    _showWaterSelectionDialog();
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor:
-                                        Color.fromARGB(255, 246, 255, 252),
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 32, vertical: 16),
-                                    textStyle: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white),
-                                  ),
-                                  child: Text('Adicionar água'),
-                                ),
-                                SizedBox(height: 16),
-                                if (_lastAddedAmount != null)
-                                  ElevatedButton(
-                                    onPressed: () async {
-                                      await _addWater(_lastAddedAmount!);
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor:
-                                          Color.fromARGB(255, 246, 255, 252),
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 32, vertical: 16),
-                                      textStyle: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white),
-                                    ),
-                                    child: Text('+ $_lastAddedAmount ml'),
-                                  ),
-                                SizedBox(height: 16),
-                                TextButton(
-                                  onPressed: (_lastAddedAmount != null)
-                                      ? _removeLastWater
-                                      : null,
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: Colors.grey[600],
-                                    textStyle: TextStyle(fontSize: 14),
-                                  ),
-                                  child: Text('Remover quantidade'),
-                                ),
-                                SizedBox(height: 32),
-                              ],
+                ),
+                Container(
+                  margin: const EdgeInsets.only(
+                      top: 150), // Ajuste conforme necessário
+                  child: Center(
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 400),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: <Widget>[
+                            _buildWaterDisplay(),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Meta diária: $_dailyGoal ml',
+                              style: TextStyle(
+                                fontSize: 24,
+                                color: isDarkMode ? Colors.white : Colors.black,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                          ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () {
+                                _showWaterSelectionDialog();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    const Color.fromARGB(255, 95, 189, 212),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 32, vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                              ),
+                              child: const Text(
+                                'Adicionar água',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            if (_lastAddedAmount != null)
+                              ElevatedButton(
+                                onPressed: () async {
+                                  await _addWater(_lastAddedAmount!);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      const Color.fromARGB(255, 246, 255, 252),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 32, vertical: 16),
+                                  textStyle: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white),
+                                ),
+                                child: Text('+ $_lastAddedAmount ml'),
+                              ),
+                            const SizedBox(height: 16),
+                            TextButton(
+                              onPressed: (_lastAddedAmount != null)
+                                  ? _removeLastWater
+                                  : null,
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.grey[600],
+                                textStyle: const TextStyle(fontSize: 14),
+                              ),
+                              child: const Text('Remover quantidade'),
+                            ),
+                            const SizedBox(height: 32),
+                          ],
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
-              floatingActionButton: FloatingActionButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SettingsPage(onSettingsChanged: () {
-                        _loadData();
-                      }),
-                    ),
-                  );
-                },
-                child: Icon(Icons.settings),
-                heroTag: 'settings',
-              ),
-              floatingActionButtonLocation:
-                  FloatingActionButtonLocation.endFloat,
+                ),
+              ],
             ),
           ),
         ],
@@ -587,10 +681,10 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
           height: 200,
           width: 120,
         ),
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
         Text(
           '$_waterConsumed / $_dailyGoal ml',
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
@@ -623,7 +717,7 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
   @override
   void onWindowEvent(String eventName) {
     if (eventName == 'close') {
-      widget.trayManager.minimizeToTray();
+      widget.trayManager?.minimizeToTray();
     }
   }
 }
@@ -644,7 +738,7 @@ class MyPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     var paint = Paint()
-      ..color = Color.fromARGB(255, 59, 161, 186).withOpacity(.8)
+      ..color = const Color.fromARGB(255, 59, 161, 186).withOpacity(.8)
       ..style = PaintingStyle.fill;
 
     var path = Path()

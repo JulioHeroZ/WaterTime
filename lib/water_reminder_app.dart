@@ -4,16 +4,19 @@ import 'Home Page/water_reminder_home_page.dart';
 import 'tray_manager.dart';
 import 'notification_manager.dart';
 import 'achievements/achievement_manager.dart';
+import 'platform/platform_manager.dart';
+import 'package:provider/provider.dart';
+import 'theme_manager.dart';
 
 class WaterReminderApp extends StatelessWidget {
-  final TrayManager trayManager;
+  final TrayManager? trayManager;
   final NotificationManager notificationManager;
 
   const WaterReminderApp({
-    Key? key,
-    required this.trayManager,
+    super.key,
+    this.trayManager,
     required this.notificationManager,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,22 +25,41 @@ class WaterReminderApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Water Reminder',
       theme: ThemeData(
-        colorScheme:
-            ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 64, 187, 224)),
+        useMaterial3: true,
+        brightness: Brightness.light,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color.fromARGB(255, 64, 187, 224),
+        ),
+        scaffoldBackgroundColor: Colors.white,
       ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color.fromARGB(255, 64, 187, 224),
+          brightness: Brightness.dark,
+        ),
+        scaffoldBackgroundColor: Colors.grey[900],
+        cardColor: Colors.grey[850],
+        canvasColor: Colors.grey[850],
+      ),
+      themeMode: context.watch<ThemeManager>().themeMode,
       builder: (context, child) {
-        return Overlay(
-          initialEntries: [
-            OverlayEntry(
-              builder: (context) => GestureDetector(
-                onPanStart: (details) {
-                  windowManager.startDragging();
-                },
-                child: child!,
+        if (PlatformManager.isWindows) {
+          return Overlay(
+            initialEntries: [
+              OverlayEntry(
+                builder: (context) => GestureDetector(
+                  onPanStart: (details) {
+                    windowManager.startDragging();
+                  },
+                  child: child!,
+                ),
               ),
-            ),
-          ],
-        );
+            ],
+          );
+        }
+        return child!;
       },
       home: WaterReminderHomePage(
         trayManager: trayManager,
