@@ -11,9 +11,9 @@
             </sparkle:releaseNotesLink>
             <pubDate>Sun, 16 Feb 2024 12:00:00 +0800</pubDate>
             <enclosure 
-                url="https://raw.githubusercontent.com/JulioHeroZ/WaterTime/release/dist/2.0.0+1/watertime-2.0.0+1-windows-setup.exe"
-                sparkle:dsaSignature="MDwCHBpiuOWpaJxq4NQ/MuP/S629fdH1f70ss1uBKSUCHA7gC2kdZyGm/2HKAtBFcIy2rfJ062W5bGY8Iag="
-                sparkle:version="2.0.0+1"
+                url="https://raw.githubusercontent.com/JulioHeroZ/WaterTime/release/dist/2.0.0/watertime-2.0.0-windows-setup.exe"
+                sparkle:dsaSignature="MDwCHGVGFdO0JOAJ7j5YUCClpOErK2A0PS4N8ijqPeACHBFEZdBfyG/uuWjHv455Oj/QJTMuhYp0zn+qhhE="
+                sparkle:version="2.0.0"
                 sparkle:os="windows"
                 length="0"
                 type="application/octet-stream" />

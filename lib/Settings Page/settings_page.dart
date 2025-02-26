@@ -8,6 +8,7 @@ import '../widgets/close_button_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../theme_manager.dart';
+import '../notification_manager.dart';
 
 class SettingsPage extends StatefulWidget {
   final Function() onSettingsChanged;
@@ -113,6 +114,15 @@ class _SettingsPageState extends State<SettingsPage> {
 
     await DataManager.saveData(data);
     widget.onSettingsChanged();
+
+    // Reagenda as notificações com as novas configurações
+    final notificationManager = NotificationManager();
+    await notificationManager.scheduleNotifications(
+      _notificationInterval,
+      _startTime,
+      _endTime,
+      _selectedDays,
+    );
 
     // Sincroniza com Supabase
     if (await AuthService.isUserLoggedIn()) {
