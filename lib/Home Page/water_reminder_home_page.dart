@@ -748,6 +748,8 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
   void _showWaterSelectionModal() {
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (BuildContext context) {
         return FutureBuilder<SharedPreferences>(
           future: SharedPreferences.getInstance(),
@@ -755,79 +757,153 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
             if (!snapshot.hasData) return const CircularProgressIndicator();
 
             final customAmount = snapshot.data!.getInt('customWaterAmount');
+            final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
             return Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: isDarkMode ? Colors.grey[900] : Colors.white,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Indicador de arraste
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[400],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                   const Text(
-                    'Selecione a quantidade\nde água',
-                    textAlign: TextAlign.center,
+                    'Adicionar Água',
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  // Botões de quantidade fixa
-                  ...[250, 500, 600, 1000].map((amount) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              _addWater(amount);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                            child: Text('$amount ml'),
-                          ),
-                        ),
-                      )),
-                  // Botão de quantidade personalizada salva
-                  if (customAmount != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
+                  const SizedBox(height: 24),
+                  // Grid de opções
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      ...[250, 500, 600, 1000]
+                          .map((amount) => _buildAmountButton(
+                                amount: amount,
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  _addWater(amount);
+                                },
+                              )),
+                      if (customAmount != null)
+                        _buildAmountButton(
+                          amount: customAmount,
+                          onTap: () {
                             Navigator.pop(context);
                             _addWater(customAmount);
                           },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                          child: Text('$customAmount ml'),
                         ),
-                      ),
-                    ),
-                  // Botão para adicionar nova quantidade personalizada
-                  SizedBox(
-                    width: double.infinity,
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _showCustomAmountDialog();
-                      },
-                      child: const Text(
-                        'Adicionar quantidade\npersonalizada',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.blue),
-                      ),
-                    ),
+                      // Botão de quantidade personalizada
+                      _buildCustomAmountButton(),
+                    ],
                   ),
+                  const SizedBox(height: 16),
                 ],
               ),
             );
           },
         );
       },
+    );
+  }
+
+  Widget _buildAmountButton(
+      {required int amount, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 140,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(255, 95, 189, 212).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: const Color.fromARGB(255, 95, 189, 212),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '$amount',
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color.fromARGB(255, 95, 189, 212),
+              ),
+            ),
+            const Text(
+              'ml',
+              style: TextStyle(
+                color: Color.fromARGB(255, 95, 189, 212),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomAmountButton() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pop(context);
+        _showCustomAmountDialog();
+      },
+      child: Container(
+        width: 140,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.grey.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.grey,
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(
+              Icons.add,
+              size: 24,
+              color: Colors.grey,
+            ),
+            Text(
+              'Personalizado',
+              style: TextStyle(
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
