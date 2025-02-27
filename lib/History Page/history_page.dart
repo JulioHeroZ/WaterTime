@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../data_manager.dart'; // Atualização da importação
 import '../tray_manager.dart';
 import '../widgets/close_button_widget.dart';
@@ -21,9 +20,16 @@ class HistoricoPage extends StatelessWidget {
             children: [
               AppBar(
                 title: const Text(
-                  'Histórico',
+                  'Historico',
                   style: TextStyle(color: Colors.white),
                 ),
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                actions: [
+                  CustomCloseButton(trayManager: trayManager),
+                ],
                 iconTheme: const IconThemeData(color: Colors.white),
                 backgroundColor: const Color.fromARGB(255, 95, 189, 212),
               ),
@@ -73,7 +79,6 @@ class HistoricoPage extends StatelessWidget {
               ),
             ],
           ),
-          CustomCloseButton(trayManager: trayManager),
         ],
       ),
     );

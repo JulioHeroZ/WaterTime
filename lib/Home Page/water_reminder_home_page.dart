@@ -19,6 +19,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../Profile Page/profile_page.dart';
 import '../services/auth_service.dart';
 import '../services/sync_service.dart';
+import '../Ranking Page/ranking_page.dart';
 
 class WaterReminderHomePage extends StatefulWidget {
   final TrayManager? trayManager;
@@ -66,6 +67,8 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
   late Animation<double> fourthAnimation;
 
   final bool _testAchievementUnlocked = false;
+
+  bool _isAddingWater = false;
 
   @override
   void initState() {
@@ -314,7 +317,11 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
   }
 
   Future<void> _addWater(int amount) async {
+    if (_isAddingWater) return;
+
     try {
+      _isAddingWater = true;
+
       setState(() {
         int previousWaterConsumed = _waterConsumed;
         _waterConsumed += amount;
@@ -328,30 +335,49 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
         }
       });
 
-      await DataManager.addWater(amount);
-      await _loadHistory();
+      await Future.wait([
+        DataManager.addWater(amount),
+        _loadHistory(),
+      ]);
     } catch (e) {
       print('Erro ao adicionar água: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao adicionar água: $e')),
       );
+    } finally {
+      _isAddingWater = false;
     }
   }
 
   Future<void> _removeLastWater() async {
-    final int? lastAmount = await DataManager.removeLastAddition();
-    if (lastAmount != null) {
-      setState(() {
-        _waterConsumed -= lastAmount;
-        if (_waterConsumed < 0) _waterConsumed = 0;
-      });
-      await _saveData();
-      await _loadHistory(); // Recarregar o histórico após remover água
-    } else {
-      // Informar ao usuário que não há adições para remover
+    if (_isAddingWater) return;
+
+    try {
+      _isAddingWater = true;
+
+      final int? lastAmount = await DataManager.removeLastAddition();
+      if (lastAmount != null) {
+        setState(() {
+          _waterConsumed -= lastAmount;
+          if (_waterConsumed < 0) _waterConsumed = 0;
+        });
+
+        await Future.wait([
+          _loadData(),
+          _loadHistory(),
+        ]);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nenhuma quantidade para remover')),
+        );
+      }
+    } catch (e) {
+      print('Erro ao remover água: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nenhuma quantidade para remover')),
+        SnackBar(content: Text('Erro ao remover água: $e')),
       );
+    } finally {
+      _isAddingWater = false;
     }
   }
 
@@ -379,24 +405,6 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
 
     return Scaffold(
       backgroundColor: isDarkMode ? Colors.grey[900] : Colors.white,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => SettingsPage(
-                onSettingsChanged: () {
-                  _loadData();
-                },
-                trayManager: widget.trayManager,
-              ),
-            ),
-          );
-        },
-        heroTag: 'settings',
-        child: const Icon(Icons.settings),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: Row(
         children: [
           SideMenu(
@@ -497,10 +505,11 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
               SideMenuItem(
                 title: 'Ranking',
                 onTap: (index, _) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Em breve!'),
-                      duration: Duration(seconds: 2),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          RankingPage(trayManager: widget.trayManager),
                     ),
                   );
                 },
@@ -535,141 +544,184 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
             ],
           ),
           Expanded(
-            child: Stack(
-              children: [
-                // Animação de onda substituindo o AppBar
-                SizedBox(
-                  height: 150, // Altura desejada para a animação
-                  width: double.infinity,
-                  child: Stack(
-                    children: [
-                      CustomPaint(
-                        painter: MyPainter(
-                          firstAnimation.value,
-                          secondAnimation.value,
-                          thirdAnimation.value,
-                          fourthAnimation.value,
-                        ),
-                        child: const SizedBox(
-                          height: 150,
-                          width: double.infinity,
-                        ),
-                      ),
-                      Positioned(
-                        top: -30,
-                        left: 0,
-                        right: 0,
-                        child: GestureDetector(
-                          onPanStart: (details) {
-                            windowManager.startDragging();
-                          },
-                          child: Image.asset(
-                            'assets/Logo.png',
-                            height: 120, // Ajuste conforme necessário
-                            alignment: Alignment.center,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 80), // Espaço para o FAB
+              child: Stack(
+                children: [
+                  // Animação de onda substituindo o AppBar
+                  SizedBox(
+                    height: 150, // Altura desejada para a animação
+                    width: double.infinity,
+                    child: Stack(
+                      children: [
+                        CustomPaint(
+                          painter: MyPainter(
+                            firstAnimation.value,
+                            secondAnimation.value,
+                            thirdAnimation.value,
+                            fourthAnimation.value,
+                          ),
+                          child: const SizedBox(
+                            height: 150,
+                            width: double.infinity,
                           ),
                         ),
-                      ),
-                      Positioned(
-                        right: 10,
-                        top: 10,
-                        child: IconButton(
-                          icon: const Icon(Ionicons.close_outline,
-                              color: Colors.white),
-                          onPressed: () {
-                            widget.trayManager?.minimizeToTray();
-                          },
+                        Positioned(
+                          top: -30,
+                          left: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onPanStart: (details) {
+                              windowManager.startDragging();
+                            },
+                            child: Image.asset(
+                              'assets/Logo.png',
+                              height: 120, // Ajuste conforme necessário
+                              alignment: Alignment.center,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                        Positioned(
+                          right: 10,
+                          top: 10,
+                          child: IconButton(
+                            icon: const Icon(Ionicons.close_outline,
+                                color: Colors.white),
+                            onPressed: () {
+                              widget.trayManager?.minimizeToTray();
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Container(
-                  margin: const EdgeInsets.only(
-                      top: 150), // Ajuste conforme necessário
-                  child: Center(
-                    child: Container(
-                      constraints: const BoxConstraints(maxWidth: 400),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: <Widget>[
-                            _buildWaterDisplay(),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Meta diária: $_dailyGoal ml',
-                              style: TextStyle(
-                                fontSize: 24,
-                                color: isDarkMode ? Colors.white : Colors.black,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: () {
-                                _showWaterSelectionDialog();
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    const Color.fromARGB(255, 95, 189, 212),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 32, vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(50),
-                                ),
-                              ),
-                              child: const Text(
-                                'Adicionar água',
+                  Container(
+                    margin: const EdgeInsets.only(
+                        top: 100), // Ajuste conforme necessário
+                    child: Center(
+                      child: Container(
+                        constraints: const BoxConstraints(maxWidth: 400),
+                        child: Padding(
+                          padding: const EdgeInsets.all(1.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: <Widget>[
+                              _buildWaterDisplay(),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Meta diária: $_dailyGoal ml',
                                 style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 22,
-                                  letterSpacing: 2,
+                                  fontSize: 24,
+                                  color:
+                                      isDarkMode ? Colors.white : Colors.black,
                                 ),
+                                textAlign: TextAlign.center,
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            if (_lastAddedAmount != null)
-                              ElevatedButton(
-                                onPressed: () async {
-                                  await _addWater(_lastAddedAmount!);
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      const Color.fromARGB(255, 246, 255, 252),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 32, vertical: 16),
-                                  textStyle: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white),
-                                ),
-                                child: Text('+ $_lastAddedAmount ml'),
+                              const SizedBox(height: 16),
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  // Botão principal de adicionar água
+                                  ElevatedButton(
+                                    onPressed: _showWaterSelectionModal,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color.fromARGB(
+                                          255, 95, 189, 212),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 32, vertical: 16),
+                                    ),
+                                    child: const Text(
+                                      'Adicionar água',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+
+                                  // Botão de quantidade personalizada - SEMPRE visível
+                                  ElevatedButton(
+                                    onPressed: () async {
+                                      final prefs =
+                                          await SharedPreferences.getInstance();
+                                      final customAmount =
+                                          prefs.getInt('customWaterAmount') ??
+                                              0;
+                                      final amountToAdd = _lastAddedAmount == 0
+                                          ? customAmount
+                                          : _lastAddedAmount ?? 0;
+                                      _addWater(amountToAdd);
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color.fromARGB(
+                                          255, 246, 255, 252),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 32, vertical: 16),
+                                    ),
+                                    child: FutureBuilder<SharedPreferences>(
+                                      future: SharedPreferences.getInstance(),
+                                      builder: (context, snapshot) {
+                                        if (!snapshot.hasData)
+                                          return const Text('+ 0 ml');
+                                        final customAmount = snapshot.data!
+                                                .getInt('customWaterAmount') ??
+                                            0;
+                                        final displayAmount =
+                                            _lastAddedAmount == 0
+                                                ? customAmount
+                                                : _lastAddedAmount ?? 0;
+                                        return Text('+ $displayAmount ml');
+                                      },
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 8),
+                                  // Botão de remover
+                                  TextButton(
+                                    onPressed: _removeLastWater,
+                                    child: const Text(
+                                      'Remover quantidade',
+                                      style: TextStyle(
+                                          color: Color.fromARGB(
+                                              255, 100, 100, 100)),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                ],
                               ),
-                            const SizedBox(height: 16),
-                            TextButton(
-                              onPressed: (_lastAddedAmount != null)
-                                  ? _removeLastWater
-                                  : null,
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.grey[600],
-                                textStyle: const TextStyle(fontSize: 14),
-                              ),
-                              child: const Text('Remover quantidade'),
-                            ),
-                            const SizedBox(height: 32),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SettingsPage(
+                onSettingsChanged: () {
+                  _loadData();
+                },
+                trayManager: widget.trayManager,
+              ),
+            ),
+          );
+        },
+        heroTag: 'settings',
+        child: const Icon(Icons.settings),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
@@ -678,7 +730,7 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
       children: [
         AnimatedWaterGlass(
           progress: _waterConsumed / _dailyGoal,
-          height: 200,
+          height: 150,
           width: 120,
         ),
         const SizedBox(height: 20),
@@ -693,24 +745,128 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
     );
   }
 
-  void _showWaterSelectionDialog() {
-    showDialog(
+  void _showWaterSelectionModal() {
+    showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return WaterSelectionDialog(
-              customAmounts: _customAmounts,
-              addWater: _addWater,
-              updateCustomAmounts: (amounts) {
-                setState(() {
-                  _customAmounts = amounts;
-                });
-              },
+        return FutureBuilder<SharedPreferences>(
+          future: SharedPreferences.getInstance(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) return const CircularProgressIndicator();
+
+            final customAmount = snapshot.data!.getInt('customWaterAmount');
+
+            return Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Selecione a quantidade\nde água',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Botões de quantidade fixa
+                  ...[250, 500, 600, 1000].map((amount) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _addWater(amount);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: Text('$amount ml'),
+                          ),
+                        ),
+                      )),
+                  // Botão de quantidade personalizada salva
+                  if (customAmount != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _addWater(customAmount);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: Text('$customAmount ml'),
+                        ),
+                      ),
+                    ),
+                  // Botão para adicionar nova quantidade personalizada
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _showCustomAmountDialog();
+                      },
+                      child: const Text(
+                        'Adicionar quantidade\npersonalizada',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.blue),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             );
           },
         );
       },
+    );
+  }
+
+  Future<void> _showCustomAmountDialog() async {
+    final TextEditingController controller = TextEditingController();
+
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Quantidade personalizada'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Quantidade em ml',
+            suffixText: 'ml',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final amount = int.tryParse(controller.text);
+              if (amount != null && amount > 0) {
+                // Salva a quantidade personalizada
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setInt('customWaterAmount', amount);
+
+                Navigator.pop(context);
+                _addWater(amount);
+              }
+            },
+            child: const Text('Adicionar'),
+          ),
+        ],
+      ),
     );
   }
 

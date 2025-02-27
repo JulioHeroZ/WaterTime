@@ -7,6 +7,7 @@ import 'achievements/achievement_manager.dart';
 import 'sound_manager.dart';
 import 'services/auth_service.dart';
 import 'services/sync_service.dart';
+import 'services/ranking_service.dart';
 
 class DataManager {
   static Future<String> get _localPath async {
@@ -91,12 +92,19 @@ class DataManager {
       final dailyGoal = data['dailyGoal'] ?? 2000;
       final updatedConsumed = currentConsumed + amount;
 
-      // Atualiza o consumo de água
+      // Atualiza o consumo de água e histórico
       data['waterConsumed'] = updatedConsumed;
-
-      // Atualiza o histórico diário
       final history = List<Map<String, dynamic>>.from(data['history'] ?? []);
+      final additions =
+          List<Map<String, dynamic>>.from(data['additions'] ?? []);
       final today = DateTime.now().toIso8601String().split('T')[0];
+
+      // Adiciona ao histórico de adições
+      additions.add({
+        'amount': amount,
+        'date': today,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
 
       final todayIndex = history.indexWhere((item) => item['date'] == today);
       if (todayIndex != -1) {
@@ -108,11 +116,12 @@ class DataManager {
         });
       }
 
-      // Salva o histórico atualizado
+      // Salva localmente
       data['history'] = history;
+      data['additions'] = additions;
       await saveData(data);
 
-      // Toca o som e verifica conquistas
+      // Verifica conquistas e toca sons (sem sincronização)
       if (amount > 0) {
         await SoundManager.playSound('add_water');
         await AchievementManager.checkAchievement('first_water');
@@ -123,8 +132,9 @@ class DataManager {
         await AchievementManager.checkAchievement('daily_goal');
       }
 
+      // Sincroniza uma única vez
       if (await AuthService.isUserLoggedIn()) {
-        await SyncService.syncUserData();
+        await SyncService.syncAllData();
       }
     } catch (e) {
       print('Erro ao adicionar água: $e');
@@ -136,20 +146,23 @@ class DataManager {
   static Future<int?> removeLastAddition() async {
     try {
       final data = await loadData();
+      final currentConsumed = data['waterConsumed'] ?? 0;
       final additions =
           List<Map<String, dynamic>>.from(data['additions'] ?? []);
       final history = List<Map<String, dynamic>>.from(data['history'] ?? []);
+      final today = DateTime.now().toIso8601String().split('T')[0];
 
-      if (additions.isNotEmpty) {
-        final lastAddition = additions.removeLast();
-        final amount = lastAddition['amount'] as int;
-        final today = DateTime.now().toIso8601String().split('T')[0];
+      if (currentConsumed > 0) {
+        // Se não houver adições específicas, remove 100ml
+        final amountToRemove = additions.isNotEmpty
+            ? additions.removeLast()['amount'] as int
+            : (currentConsumed >= 100 ? 100 : currentConsumed);
 
-        // Atualiza o histórico
+        // Atualiza o consumo do dia
         final todayIndex = history.indexWhere((item) => item['date'] == today);
         if (todayIndex != -1) {
           history[todayIndex]['amount'] =
-              (history[todayIndex]['amount'] as int) - amount;
+              (history[todayIndex]['amount'] as int) - amountToRemove;
 
           // Remove o registro do dia se a quantidade for zero
           if (history[todayIndex]['amount'] <= 0) {
@@ -157,16 +170,24 @@ class DataManager {
           }
         }
 
-        // Atualiza os dados
-        data['additions'] = additions;
+        // Atualiza os dados locais
+        data['waterConsumed'] = currentConsumed - amountToRemove;
+        if (data['waterConsumed'] < 0) data['waterConsumed'] = 0;
         data['history'] = history;
+        data['additions'] = additions;
         await saveData(data);
 
+        // Tenta sincronizar, mas não bloqueia se falhar
         if (await AuthService.isUserLoggedIn()) {
-          await SyncService.syncUserData();
+          try {
+            await SyncService.syncAllData();
+          } catch (e) {
+            print(
+                'Erro na sincronização, mas a remoção local foi bem sucedida: $e');
+          }
         }
 
-        return amount;
+        return amountToRemove;
       }
       return null;
     } catch (e) {

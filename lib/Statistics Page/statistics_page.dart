@@ -112,11 +112,17 @@ class _StatisticsPageState extends State<StatisticsPage> {
           Column(
             children: [
               AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
                 title: const Text(
                   'Estatísticas',
                   style: TextStyle(color: Colors.white),
                 ),
-                iconTheme: const IconThemeData(color: Colors.white),
+                actions: [
+                  CustomCloseButton(trayManager: widget.trayManager),
+                ],
                 backgroundColor: const Color.fromARGB(255, 95, 189, 212),
               ),
               Expanded(
@@ -138,7 +144,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
               ),
             ],
           ),
-          CustomCloseButton(trayManager: widget.trayManager),
         ],
       ),
     );

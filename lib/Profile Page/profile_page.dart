@@ -150,162 +150,187 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: FutureBuilder<SharedPreferences>(
-        future: SharedPreferences.getInstance(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-          return Stack(
-            children: [
-              Column(
-                children: [
-                  Container(
-                    color: const Color.fromARGB(255, 95, 189, 212),
-                    padding: const EdgeInsets.fromLTRB(16, 40, 16, 20),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.arrow_back,
-                                  color: Colors.white),
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                            const Text(
-                              'Você',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 20),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        CircleAvatar(
-                          radius: 50,
-                          backgroundImage: _photoUrl.isNotEmpty
-                              ? NetworkImage(_photoUrl)
-                              : null,
-                          child: _photoUrl.isEmpty
-                              ? const Icon(Icons.person, size: 50)
-                              : null,
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          _name,
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 24),
-                        ),
-                        Text(
-                          _email,
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ],
+    return Scaffold(
+      backgroundColor: isDarkMode ? Colors.grey[900] : Colors.white,
+      body: Column(
+        children: [
+          Container(
+            color: const Color.fromARGB(255, 95, 189, 212),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    const Text(
+                      'Perfil',
+                      style: TextStyle(color: Colors.white, fontSize: 20),
+                    ),
+                    CustomCloseButton(trayManager: widget.trayManager),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                CircleAvatar(
+                  radius: 50,
+                  backgroundImage:
+                      _photoUrl.isNotEmpty ? NetworkImage(_photoUrl) : null,
+                  child: _photoUrl.isEmpty
+                      ? const Icon(Icons.person, size: 50)
+                      : null,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  _name,
+                  style: const TextStyle(color: Colors.white, fontSize: 24),
+                ),
+                Text(
+                  _email,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.person_outline, color: Colors.grey),
+                  title: Text(
+                    'Sexo',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black,
                     ),
                   ),
-                  Expanded(
-                    child: ListView(
-                      children: [
-                        ListTile(
-                          leading: const Icon(Icons.person_outline),
-                          title: const Text('Sexo'),
-                          trailing: DropdownButton<String>(
-                            value: _selectedSex,
-                            onChanged: (String? newValue) async {
-                              if (newValue != null) {
-                                setState(() => _selectedSex = newValue);
-                                await _updateUserPreferences(
-                                    _selectedSex, _selectedWeight);
-                              }
-                            },
-                            items: <String>['Masculino', 'Feminino']
-                                .map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.monitor_weight_outlined),
-                          title: const Text('Peso'),
-                          trailing: SizedBox(
-                            width: 100,
-                            child: DropdownButton<int>(
-                              value: _selectedWeight,
-                              onChanged: (int? newValue) async {
-                                if (newValue != null) {
-                                  setState(() => _selectedWeight = newValue);
-                                  await _updateUserPreferences(
-                                      _selectedSex, _selectedWeight);
-                                }
-                              },
-                              items: List<int>.generate(200, (i) => i + 1)
-                                  .map<DropdownMenuItem<int>>((int value) {
-                                return DropdownMenuItem<int>(
-                                  value: value,
-                                  child: Text('$value kg'),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ),
-                        SwitchListTile(
-                          title: const Text('Meta automática baseada no peso'),
-                          subtitle: Text(_isAutomaticGoal
-                              ? 'Meta atual: ${_calculateWaterGoal(_selectedWeight)} ml'
-                              : 'Meta atual: $_dailyGoal ml'),
-                          value: _isAutomaticGoal,
-                          onChanged: (bool value) async {
-                            setState(() => _isAutomaticGoal = value);
-                            await _updateUserPreferences(
-                                _selectedSex, _selectedWeight);
-                          },
-                        ),
-                        const Divider(),
-                        ListTile(
-                          leading: const Icon(Icons.people_outline),
-                          title: const Text('Contatos'),
-                          onTap: () {
-                            // Implementar navegação para tela de contatos
-                          },
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.settings_outlined),
-                          title: const Text('Configurações'),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => SettingsPage(
-                                  onSettingsChanged:
-                                      widget.onSettingsChanged ?? () {},
-                                  trayManager: widget.trayManager,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                        ListTile(
-                          leading: Icon(Icons.exit_to_app, color: Colors.red),
-                          title:
-                              Text('Sair', style: TextStyle(color: Colors.red)),
-                          onTap: () async {
-                            await AuthService.logout();
-                            Navigator.of(context).pop();
-                          },
-                        ),
-                      ],
+                  trailing: DropdownButton<String>(
+                    value: _selectedSex,
+                    dropdownColor: isDarkMode ? Colors.grey[850] : Colors.white,
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black,
+                    ),
+                    onChanged: (String? newValue) async {
+                      if (newValue != null) {
+                        setState(() => _selectedSex = newValue);
+                        await _updateUserPreferences(
+                            _selectedSex, _selectedWeight);
+                      }
+                    },
+                    items: <String>['Masculino', 'Feminino']
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.monitor_weight_outlined,
+                      color: Colors.grey),
+                  title: Text(
+                    'Peso',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black,
                     ),
                   ),
-                ],
-              ),
-              CustomCloseButton(trayManager: widget.trayManager),
-            ],
-          );
-        },
+                  trailing: SizedBox(
+                    width: 100,
+                    child: DropdownButton<int>(
+                      value: _selectedWeight,
+                      onChanged: (int? newValue) async {
+                        if (newValue != null) {
+                          setState(() => _selectedWeight = newValue);
+                          await _updateUserPreferences(
+                              _selectedSex, _selectedWeight);
+                        }
+                      },
+                      items: List<int>.generate(200, (i) => i + 1)
+                          .map<DropdownMenuItem<int>>((int value) {
+                        return DropdownMenuItem<int>(
+                          value: value,
+                          child: Text('$value kg'),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                SwitchListTile(
+                  title: Text(
+                    'Meta automática baseada no peso',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  subtitle: Text(
+                    _isAutomaticGoal
+                        ? 'Meta atual: ${_calculateWaterGoal(_selectedWeight)} ml'
+                        : 'Meta atual: $_dailyGoal ml',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                  ),
+                  value: _isAutomaticGoal,
+                  onChanged: (bool value) async {
+                    setState(() => _isAutomaticGoal = value);
+                    await _updateUserPreferences(_selectedSex, _selectedWeight);
+                  },
+                ),
+                const Divider(color: Colors.grey),
+                ListTile(
+                  leading: const Icon(Icons.people_outline, color: Colors.grey),
+                  title: Text(
+                    'Contatos',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  onTap: () {
+                    // Implementar navegação para tela de contatos
+                  },
+                ),
+                ListTile(
+                  leading:
+                      const Icon(Icons.settings_outlined, color: Colors.grey),
+                  title: Text(
+                    'Configurações',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SettingsPage(
+                          onSettingsChanged: widget.onSettingsChanged ?? () {},
+                          trayManager: widget.trayManager,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.exit_to_app, color: Colors.red),
+                  title: Text(
+                    'Sair',
+                    style: TextStyle(
+                      color: Colors.red,
+                    ),
+                  ),
+                  onTap: () async {
+                    await AuthService.logout();
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

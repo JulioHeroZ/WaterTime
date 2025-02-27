@@ -7,7 +7,6 @@ import '../tray_manager.dart';
 import '../widgets/close_button_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
-import '../theme_manager.dart';
 import '../notification_manager.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -153,6 +152,9 @@ class _SettingsPageState extends State<SettingsPage> {
                       icon: const Icon(Icons.arrow_back, color: Colors.white),
                       onPressed: () => Navigator.pop(context),
                     ),
+                    actions: [
+                      CustomCloseButton(trayManager: widget.trayManager),
+                    ],
                     iconTheme: const IconThemeData(color: Colors.white),
                     backgroundColor: const Color.fromARGB(255, 95, 189, 212),
                   ),
@@ -243,7 +245,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ],
               ),
-              CustomCloseButton(trayManager: widget.trayManager),
             ],
           );
         },

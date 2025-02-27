@@ -45,7 +45,9 @@ class _AchievementsPageState extends State<AchievementsPage> {
                   'Conquistas',
                   style: TextStyle(color: Colors.white),
                 ),
-                iconTheme: const IconThemeData(color: Colors.white),
+                actions: [
+                  CustomCloseButton(trayManager: widget.trayManager),
+                ],
                 backgroundColor: const Color.fromARGB(255, 95, 189, 212),
               ),
               Expanded(
@@ -90,7 +92,6 @@ class _AchievementsPageState extends State<AchievementsPage> {
               ),
             ],
           ),
-          CustomCloseButton(trayManager: widget.trayManager),
         ],
       ),
       floatingActionButton: FloatingActionButton(

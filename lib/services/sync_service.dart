@@ -4,6 +4,7 @@ import '../achievements/achievement_manager.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/ranking_service.dart';
 
 class SyncService {
   static final supabase = Supabase.instance.client;
@@ -142,23 +143,74 @@ class SyncService {
     if (user == null) return;
 
     try {
-      // Sincroniza configurações
-      await _syncSettings(user.id);
+      final localData = await DataManager.loadData();
+      final history =
+          List<Map<String, dynamic>>.from(localData['history'] ?? []);
+      final today = DateTime.now().toIso8601String().split('T')[0];
 
-      // Sincroniza histórico de água
-      await _syncWaterHistory(user.id);
+      // Pega o valor atual do dia
+      final todayAmount = history.firstWhere(
+        (item) => item['date'] == today,
+        orElse: () => {'amount': localData['waterConsumed'] ?? 0},
+      )['amount'] as int;
 
-      // Sincroniza conquistas
-      await _syncAchievements(user.id);
+      // Busca o registro do dia
+      final existingRecord = await supabase
+          .from('daily_consumption')
+          .select()
+          .eq('user_id', user.id)
+          .eq('date', today)
+          .maybeSingle();
 
-      // Atualiza timestamp da última sincronização
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('last_sync', DateTime.now().toIso8601String());
+      if (existingRecord != null) {
+        // Atualiza o registro existente
+        await supabase
+            .from('daily_consumption')
+            .update({'amount': todayAmount}).eq('id', existingRecord['id']);
+      } else {
+        // Cria um novo registro com UUID válido
+        await supabase.from('daily_consumption').insert({
+          'id': const Uuid().v4(),
+          'user_id': user.id,
+          'date': today,
+          'amount': todayAmount,
+        });
+      }
 
-      print('Sincronização completa realizada com sucesso');
+      // Atualiza o ranking diário
+      await _updateDailyRanking(user.id, todayAmount);
     } catch (e) {
       print('Erro na sincronização completa: $e');
-      throw Exception('Falha na sincronização completa: $e');
+    }
+  }
+
+  // Método atualizado para usar a tabela correta do ranking
+  static Future<void> _updateDailyRanking(String userId, int amount) async {
+    try {
+      final userDataResult = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', userId)
+          .limit(1);
+
+      if (userDataResult.isEmpty) {
+        print('Usuário não encontrado');
+        return;
+      }
+
+      final userData = userDataResult.first;
+      final today = DateTime.now().toIso8601String().split('T')[0];
+
+      // Executa uma transação para garantir atomicidade
+      await supabase.rpc('update_ranking', params: {
+        'p_user_id': userId,
+        'p_display_name': userData['name'],
+        'p_daily_score': amount,
+        'p_created_at': today,
+        'p_last_update': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      print('Erro ao atualizar ranking diário: $e');
     }
   }
 

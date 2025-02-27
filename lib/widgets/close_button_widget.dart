@@ -1,26 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:ionicons/ionicons.dart';
 import '../tray_manager.dart';
 
 class CustomCloseButton extends StatelessWidget {
   final TrayManager? trayManager;
 
-  const CustomCloseButton({
-    Key? key,
-    this.trayManager,
-  }) : super(key: key);
+  const CustomCloseButton({Key? key, this.trayManager}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      right: 10,
-      top: 10,
-      child: IconButton(
-        icon: const Icon(Ionicons.close_outline, color: Colors.white),
-        onPressed: () {
-          trayManager?.minimizeToTray();
-        },
-      ),
+    return IconButton(
+      icon: const Icon(Icons.close),
+      onPressed: () {
+        if (trayManager != null) {
+          trayManager!.minimizeToTray();
+        } else {
+          Navigator.of(context).pop();
+        }
+      },
     );
   }
 }
