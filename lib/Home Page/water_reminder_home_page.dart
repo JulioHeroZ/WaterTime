@@ -14,7 +14,6 @@ import 'package:easy_sidemenu/easy_sidemenu.dart';
 import '../Statistics Page/statistics_page.dart';
 import '../widgets/animated_water_glass.dart';
 import '../achievements/achievements_page.dart';
-import 'package:auto_updater/auto_updater.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Profile Page/profile_page.dart';
 import '../services/auth_service.dart';
@@ -430,39 +429,25 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
               ),
             ),
             items: [
+              // Substituído: o botão de Perfil/Login foi removido e substituído
+              // por um atalho para as Configurações. A navegação para login
+              // foi removida conforme solicitado.
               SideMenuItem(
-                title: 'Perfil',
-                onTap: (index, _) async {
-                  final isLoggedIn = await AuthService.isUserLoggedIn();
-                  if (isLoggedIn) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ProfilePage(
-                          trayManager: widget.trayManager,
-                          onSettingsChanged: () {
-                            _loadData();
-                          },
-                        ),
+                title: 'Configurações',
+                onTap: (index, _) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SettingsPage(
+                        onSettingsChanged: () {
+                          _loadData();
+                        },
+                        trayManager: widget.trayManager,
                       ),
-                    );
-                  } else {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => LoginPage(
-                          trayManager: widget.trayManager,
-                          notificationManager: widget.notificationManager,
-                        ),
-                      ),
-                    );
-                    if (result == true) {
-                      await _loadData();
-                      setState(() {});
-                    }
-                  }
+                    ),
+                  );
                 },
-                icon: const Icon(Ionicons.person_circle_outline),
+                icon: const Icon(Icons.settings),
               ),
               SideMenuItem(
                 title: 'Histórico',
@@ -515,32 +500,7 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
                 },
                 icon: const Icon(Icons.leaderboard_outlined),
               ),
-              SideMenuItem(
-                title: 'Verificar Atualizações',
-                onTap: (index, _) async {
-                  try {
-                    await autoUpdater.checkForUpdates();
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Verificando atualizações...'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Erro ao verificar atualizações: $e'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  }
-                },
-                icon: const Icon(Icons.system_update_outlined),
-              ),
+              // Item 'Verificar Atualizações' removido conforme solicitado.
             ],
           ),
           Expanded(
@@ -704,24 +664,8 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => SettingsPage(
-                onSettingsChanged: () {
-                  _loadData();
-                },
-                trayManager: widget.trayManager,
-              ),
-            ),
-          );
-        },
-        heroTag: 'settings',
-        child: const Icon(Icons.settings),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      // FloatingActionButton de configurações removido porque o atalho para
+      // Configurações foi adicionado no menu lateral.
     );
   }
 

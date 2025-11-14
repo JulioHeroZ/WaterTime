@@ -1,3 +1,4 @@
+/*
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data_manager.dart';
@@ -150,5 +151,33 @@ class RankingService {
         .order('created_at', ascending: false);
 
     return List<Map<String, dynamic>>.from(response);
+  }
+}
+*/
+
+// Stub do RankingService: deixamos uma API mínima ativa que não faz nada
+// para evitar que chamadas existentes quebrem a compilação. A implementação
+// completa está comentada acima e pode ser restaurada quando desejado.
+class RankingService {
+  // Não faz nada, apenas evita erros de import/compilação.
+  static Future<void> updateScore(int waterAmount) async {
+    // Ranking desativado
+    return;
+  }
+
+  static Stream<List<Map<String, dynamic>>> getDailyRankings() async* {
+    yield <Map<String, dynamic>>[];
+  }
+
+  static Stream<List<Map<String, dynamic>>> getMonthlyRankings() async* {
+    yield <Map<String, dynamic>>[];
+  }
+
+  static Stream<List<Map<String, dynamic>>> getYearlyRankings() async* {
+    yield <Map<String, dynamic>>[];
+  }
+
+  static Future<List<Map<String, dynamic>>> getUserRankingHistory() async {
+    return <Map<String, dynamic>>[];
   }
 }

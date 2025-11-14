@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:auto_updater/auto_updater.dart';
 import 'water_reminder_app.dart';
 import 'tray_manager.dart';
 import 'notification_manager.dart';
@@ -24,11 +23,8 @@ void main() async {
 
   await windowManager.ensureInitialized();
 
-  String feedURL =
-      'https://raw.githubusercontent.com/JulioHeroZ/WaterTime/release/dist/appcast.xml'; // URL do seu servidor de updates
-  await autoUpdater.setFeedURL(feedURL);
-  await autoUpdater.checkForUpdates(); // Verifica updates ao iniciar
-  await autoUpdater.setScheduledCheckInterval(3600); // Verifica a cada 1 hora
+  // Sistema de atualização removido — chamadas ao plugin `auto_updater` foram
+  // eliminadas. Se quiser restaurar, descomente e configure o feedURL.
 
   await windowManager.ensureInitialized();
 

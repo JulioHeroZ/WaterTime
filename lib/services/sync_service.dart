@@ -4,7 +4,7 @@ import '../achievements/achievement_manager.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/ranking_service.dart';
+// import '../services/ranking_service.dart'; // Ranking desativado
 
 class SyncService {
   static final supabase = Supabase.instance.client;
@@ -178,13 +178,16 @@ class SyncService {
       }
 
       // Atualiza o ranking diário
-      await _updateDailyRanking(user.id, todayAmount);
+      // (Removido) Ranking desativado — chamada comentada para possíveis reimplementações futuras
+      // await _updateDailyRanking(user.id, todayAmount);
     } catch (e) {
       print('Erro na sincronização completa: $e');
     }
   }
 
-  // Método atualizado para usar a tabela correta do ranking
+  // Método de ranking removido/comentado. Mantido aqui como referência para
+  // reimplementação futura.
+  /*
   static Future<void> _updateDailyRanking(String userId, int amount) async {
     try {
       final userDataResult = await supabase
@@ -213,6 +216,7 @@ class SyncService {
       print('Erro ao atualizar ranking diário: $e');
     }
   }
+  */
 
   // Iniciar sincronização periódica (chamado ao iniciar o app)
   static void startPeriodicSync(

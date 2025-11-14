@@ -7,7 +7,7 @@ import 'achievements/achievement_manager.dart';
 import 'sound_manager.dart';
 import 'services/auth_service.dart';
 import 'services/sync_service.dart';
-import 'services/ranking_service.dart';
+// import 'services/ranking_service.dart'; // Ranking desativado
 
 class DataManager {
   static Future<String> get _localPath async {

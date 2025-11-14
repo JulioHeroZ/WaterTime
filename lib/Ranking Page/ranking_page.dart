@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+// A implementação original da página de Ranking foi comentada para
+// desativar a funcionalidade de ranking, mantendo o código disponível
+// para uma possível reimplementação futura.
+
+/*
 import '../services/ranking_service.dart';
 import '../widgets/close_button_widget.dart';
 import '../tray_manager.dart';
@@ -73,7 +78,7 @@ class _RankingPageState extends State<RankingPage>
       stream: rankingStream,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Center(child: Text('Erro: ${snapshot.error}'));
+          return Center(child: Text('Erro: \\${snapshot.error}'));
         }
 
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -95,11 +100,11 @@ class _RankingPageState extends State<RankingPage>
             return ListTile(
               leading: CircleAvatar(
                 backgroundColor: _getMedalColor(index),
-                child: Text('${index + 1}'),
+                child: Text('\${index + 1}'),
               ),
               title: Text(ranking['display_name'] ?? 'Anônimo'),
               trailing: Text(
-                '${ranking[_getScoreField(index)]} ml',
+                '\${ranking[_getScoreField(index)]} ml',
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -136,5 +141,32 @@ class _RankingPageState extends State<RankingPage>
       default:
         return Colors.blue[200]!;
     }
+  }
+}
+*/
+
+// Placeholder simples quando o ranking está desativado.
+class RankingPage extends StatelessWidget {
+  // Mantemos o parâmetro trayManager para compatibilidade com
+  // chamadas existentes (não é utilizado aqui).
+  final dynamic trayManager;
+  const RankingPage({super.key, this.trayManager});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Rankings (desativado)'),
+      ),
+      body: const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text(
+            'A funcionalidade de ranking foi removida temporariamente.\n\n',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
   }
 }
