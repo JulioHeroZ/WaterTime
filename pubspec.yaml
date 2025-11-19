@@ -31,7 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
   shared_preferences: ^2.2.2
-  supabase_flutter: ^1.10.25
+  # supabase_flutter: removido
   jwt_decoder: ^2.0.1
   provider: ^6.1.1
   flutter_local_notifications: ^9.1.5

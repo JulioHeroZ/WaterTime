@@ -94,14 +94,7 @@ class _AchievementsPageState extends State<AchievementsPage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Testa o desbloqueio da primeira conquista
-          AchievementManager.checkAchievement('first_water');
-        },
-        tooltip: 'Testar Conquista',
-        child: const Icon(Icons.add),
-      ),
+
     );
   }
 }

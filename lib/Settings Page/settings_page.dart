@@ -8,7 +8,7 @@ import '../widgets/close_button_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../notification_manager.dart';
-
+// import 'package:supabase_flutter/supabase_flutter.dart';
 class SettingsPage extends StatefulWidget {
   final Function() onSettingsChanged;
   final TrayManager? trayManager;
@@ -123,10 +123,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _selectedDays,
     );
 
-    // Sincroniza com Supabase
-    if (await AuthService.isUserLoggedIn()) {
-      await SyncService.syncUserData();
-    }
+    // Sincronização remota removida (Supabase)
   }
 
   @override

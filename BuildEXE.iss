@@ -1,5 +1,5 @@
 #define MyAppName "WaterTime"
-#define MyAppVersion "1.3.0"
+#define MyAppVersion "2.0.0"
 #define MyAppPublisher "JulioHeroZ"
 #define MyAppURL "https://github.com/JulioHeroZ/WaterTime"
 #define MyAppExeName "watertime.exe"
@@ -20,7 +20,7 @@ OutputBaseFilename=watertime-{#MyAppVersion}+1-windows-setup
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
-SignTool=sign /f "{#CertificatePath}" /p {#CertificatePassword} /tr http://timestamp.digicert.com /td sha256 /fd sha256 $f
+SignTool=SignTool
 SignedUninstaller=yes
 
 [Languages]

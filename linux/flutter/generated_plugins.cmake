@@ -4,11 +4,9 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_linux
-  gtk
   local_notifier
   screen_retriever
   system_tray
-  url_launcher_linux
   window_manager
 )
 

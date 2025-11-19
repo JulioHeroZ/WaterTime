@@ -8,14 +8,12 @@ import '../data_manager.dart';
 import '../notification_manager.dart';
 import '../custom_amount.dart';
 import '../dialogs.dart';
-import '../Login Page/login_page.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:easy_sidemenu/easy_sidemenu.dart';
 import '../Statistics Page/statistics_page.dart';
 import '../widgets/animated_water_glass.dart';
 import '../achievements/achievements_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../Profile Page/profile_page.dart';
 import '../services/auth_service.dart';
 import '../services/sync_service.dart';
 import '../Ranking Page/ranking_page.dart';
@@ -64,8 +62,6 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
 
   late AnimationController fourthController;
   late Animation<double> fourthAnimation;
-
-  final bool _testAchievementUnlocked = false;
 
   bool _isAddingWater = false;
 

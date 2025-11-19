@@ -13,7 +13,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await AuthService.initialize();
-  SyncService.startPeriodicSync();
+  // SyncService.startPeriodicSync(); // Removido: sincronização Supabase
   await AchievementManager.initializeAchievements();
 
   final notificationManager = NotificationManager();

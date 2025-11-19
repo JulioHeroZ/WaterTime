@@ -3,12 +3,10 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  app_links
   audioplayers_windows
   local_notifier
   screen_retriever
   system_tray
-  url_launcher_windows
   window_manager
 )
 

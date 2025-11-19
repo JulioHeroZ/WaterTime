@@ -134,7 +134,7 @@ class DataManager {
 
       // Sincroniza uma única vez
       if (await AuthService.isUserLoggedIn()) {
-        await SyncService.syncAllData();
+  // await SyncService.syncAllData(); // Removido: sincronização Supabase
       }
     } catch (e) {
       print('Erro ao adicionar água: $e');
@@ -180,7 +180,7 @@ class DataManager {
         // Tenta sincronizar, mas não bloqueia se falhar
         if (await AuthService.isUserLoggedIn()) {
           try {
-            await SyncService.syncAllData();
+            // await SyncService.syncAllData(); // Removido: sincronização Supabase
           } catch (e) {
             print(
                 'Erro na sincronização, mas a remoção local foi bem sucedida: $e');

@@ -1,0 +1,3 @@
+- Done: Investigate remaining overflow with SafeArea + SingleChildScrollView
+- Done: Adjust layout to use CustomScrollView or ensure ListView bounded
+- Done: Verify fix by reviewing layout structure

@@ -1,21 +1,21 @@
 /*
-import 'package:supabase_flutter/supabase_flutter.dart';
+// import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data_manager.dart';
 
 class RankingService {
-  static final supabase = Supabase.instance.client;
+  // static final supabase = Supabase.instance.client;
 
   static Future<void> updateScore(int waterAmount) async {
     try {
-      final user = supabase.auth.currentUser;
+  // final user = supabase.auth.currentUser;
       if (user == null) return;
 
-      final userData = await supabase
-          .from('profiles')
-          .select('name')
-          .eq('id', user.id)
-          .single();
+    // final userData = await supabase
+    //     .from('profiles')
+    //     .select('name')
+    //     .eq('id', user.id)
+    //     .single();
 
       final today = DateTime.now();
 
@@ -65,7 +65,7 @@ class RankingService {
 
       if (yesterdayAmount > 0) {
         // Atualiza ranking mensal
-        await supabase.from('monthly_rankings').upsert({
+  // await supabase.from('monthly_rankings').upsert({
           'user_id': userId,
           'display_name': displayName,
           'monthly_score': yesterdayAmount,
@@ -75,7 +75,7 @@ class RankingService {
         });
 
         // Atualiza ranking anual
-        await supabase.from('yearly_rankings').upsert({
+  // await supabase.from('yearly_rankings').upsert({
           'user_id': userId,
           'display_name': displayName,
           'yearly_score': yesterdayAmount,
@@ -95,7 +95,7 @@ class RankingService {
       String userId, String displayName, int amount) async {
     final today = DateTime.now().toIso8601String().split('T')[0];
 
-    await supabase.from('rankings').upsert({
+  // await supabase.from('rankings').upsert({
       'user_id': userId,
       'display_name': displayName,
       'daily_score': amount,
@@ -105,7 +105,7 @@ class RankingService {
 
   // Métodos de stream para obter os rankings
   static Stream<List<Map<String, dynamic>>> getDailyRankings() {
-    return supabase.from('rankings').stream(primaryKey: ['user_id']).map(
+  // return supabase.from('rankings').stream(primaryKey: ['user_id']).map(
         (data) => List<Map<String, dynamic>>.from(data)
           ..sort((a, b) =>
               (b['daily_score'] as int).compareTo(a['daily_score'] as int))
@@ -116,7 +116,7 @@ class RankingService {
     final currentMonth = DateTime.now().month;
     final currentYear = DateTime.now().year;
 
-    return supabase.from('monthly_rankings').stream(primaryKey: [
+  // return supabase.from('monthly_rankings').stream(primaryKey: [
       'user_id'
     ]).map((data) => List<Map<String, dynamic>>.from(data)
         .where((item) =>
@@ -130,7 +130,7 @@ class RankingService {
   static Stream<List<Map<String, dynamic>>> getYearlyRankings() {
     final currentYear = DateTime.now().year;
 
-    return supabase.from('yearly_rankings').stream(primaryKey: ['user_id']).map(
+  // return supabase.from('yearly_rankings').stream(primaryKey: ['user_id']).map(
         (data) => List<Map<String, dynamic>>.from(data)
             .where((item) => item['year'] == currentYear)
             .toList()
@@ -141,16 +141,16 @@ class RankingService {
 
   // Método para obter histórico de rankings do usuário
   static Future<List<Map<String, dynamic>>> getUserRankingHistory() async {
-    final user = supabase.auth.currentUser;
+  // final user = supabase.auth.currentUser;
     if (user == null) return [];
 
-    final response = await supabase
-        .from('ranking_history')
-        .select()
-        .eq('user_id', user.id)
-        .order('created_at', ascending: false);
+  // final response = await supabase
+  //     .from('ranking_history')
+  //     .select()
+  //     .eq('user_id', user.id)
+  //     .order('created_at', ascending: false);
 
-    return List<Map<String, dynamic>>.from(response);
+  // return List<Map<String, dynamic>>.from(response);
   }
 }
 */
