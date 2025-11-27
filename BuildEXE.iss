@@ -3,8 +3,6 @@
 #define MyAppPublisher "JulioHeroZ"
 #define MyAppURL "https://github.com/JulioHeroZ/WaterTime"
 #define MyAppExeName "watertime.exe"
-#define CertificatePath "C:\Users\071444\Documents\Projetos\WaterTime\Certificado\WaterTime Certificate.pfx"
-#define CertificatePassword "Julio1065671133"
 
 [Setup]
 AppId={{YOUR-APP-ID-HERE}
