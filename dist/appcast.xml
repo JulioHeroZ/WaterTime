@@ -5,15 +5,15 @@
         <description>Atualizações mais recentes do WaterTime</description>
         <language>pt-BR</language>
         <item>
-            <title>Versão 2.0.0</title>
+            <title>Versão 2.0.1</title>
             <sparkle:releaseNotesLink>
-                https://github.com/JulioHeroZ/WaterTime/releases/tag/v2.0.0
+                https://github.com/JulioHeroZ/WaterTime/releases/tag/v2.0.1
             </sparkle:releaseNotesLink>
             <pubDate>Sun, 16 Feb 2024 12:00:00 +0800</pubDate>
             <enclosure 
-                url="https://raw.githubusercontent.com/JulioHeroZ/WaterTime/release/dist/2.0.0+1/watertime-2.0.0+1-windows-setup.exe"
+                url="https://raw.githubusercontent.com/JulioHeroZ/WaterTime/release/dist/2.0.1+1/watertime-2.0.1+1-windows-setup.exe"
                 sparkle:dsaSignature="MDwCHCG+Mmcrl4qvMK5zx+2LTjcUseJMuj1Ww89XZc0CHF52tbRayG49zKSqxC2bDPO56a8Bw7SiuWGVUmA="
-                sparkle:version="2.0.0+1"
+                sparkle:version="2.0.1+1"
                 sparkle:os="windows"
                 length="0"
                 type="application/octet-stream" />
