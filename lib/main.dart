@@ -5,7 +5,6 @@ import 'tray_manager.dart';
 import 'notification_manager.dart';
 import 'achievements/achievement_manager.dart';
 import 'services/auth_service.dart';
-import 'services/sync_service.dart';
 import 'package:provider/provider.dart';
 import 'theme_manager.dart';
 
