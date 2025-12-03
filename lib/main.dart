@@ -7,9 +7,26 @@ import 'achievements/achievement_manager.dart';
 import 'services/auth_service.dart';
 import 'package:provider/provider.dart';
 import 'theme_manager.dart';
+import 'dart:io';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Evita múltiplas instâncias do app: tenta obter lock exclusivo em arquivo no diretório temporário
+  final lockFile = File('${Directory.systemTemp.path}/watertime_single_instance.lock');
+  RandomAccessFile? raf;
+  try {
+    if (!lockFile.existsSync()) {
+      lockFile.createSync(recursive: true);
+    }
+    raf = lockFile.openSync(mode: FileMode.append);
+    // Tenta lock exclusivo; se não conseguir, encerra este processo
+    raf.lockSync(FileLock.exclusive);
+  } catch (e) {
+    // Outra instância já está rodando
+    // Opcional: tentar focar janela existente via mecanismo IPC; por ora, apenas encerrar
+    exit(0);
+  }
 
   await AuthService.initialize();
   // SyncService.startPeriodicSync(); // Removido: sincronização Supabase
@@ -57,4 +74,13 @@ void main() async {
       ),
     ),
   );
+
+  // Ao terminar, libera o lock (não bloqueante; quando o processo fecha o SO libera de qualquer modo)
+  ProcessSignal.sigint.watch().listen((_) {
+    try {
+      raf?.unlockSync();
+      raf?.closeSync();
+    } catch (_) {}
+    exit(0);
+  });
 }
