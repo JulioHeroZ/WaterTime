@@ -1,14 +1,10 @@
 // import 'package:supabase_flutter/supabase_flutter.dart';
-import '../data_manager.dart';
-import '../achievements/achievement_manager.dart';
-import 'package:uuid/uuid.dart';
 import 'dart:async';
-import 'package:shared_preferences/shared_preferences.dart';
+
 // import '../services/ranking_service.dart'; // Ranking desativado
 
 class SyncService {
-  // static final supabase = Supabase.instance.client;
-  static Timer? _syncTimer;
+
 
   // Removido: sincronização com Supabase
   static Future<void> syncUserData() async {
@@ -17,19 +13,13 @@ class SyncService {
   }
 
   // Removido: sincronização de configurações com Supabase
-  static Future<void> _syncSettings(String userId) async {
-    return;
-  }
+
 
   // Removido: sincronização de histórico com Supabase
-  static Future<void> _syncWaterHistory(String userId) async {
-    return;
-  }
+
 
   // Removido: sincronização de conquistas com Supabase
-  static Future<void> _syncAchievements(String userId) async {
-    return;
-  }
+
 
   // Removido: carregamento de dados do Supabase
   static Future<void> loadFromServer() async {

@@ -3,7 +3,7 @@ import '../data_manager.dart'; // Atualização da importação
 import '../tray_manager.dart';
 import '../widgets/close_button_widget.dart';
 
-class HistoricoPage extends StatelessWidget {
+class HistoricoPage extends StatefulWidget {
   final TrayManager? trayManager;
 
   const HistoricoPage({
@@ -11,6 +11,11 @@ class HistoricoPage extends StatelessWidget {
     this.trayManager,
   });
 
+  @override
+  _HistoricoPageState createState() => _HistoricoPageState();
+}
+
+class _HistoricoPageState extends State<HistoricoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,7 +33,7 @@ class HistoricoPage extends StatelessWidget {
                   onPressed: () => Navigator.pop(context),
                 ),
                 actions: [
-                  CustomCloseButton(trayManager: trayManager),
+                  CustomCloseButton(trayManager: widget.trayManager),
                 ],
                 iconTheme: const IconThemeData(color: Colors.white),
                 backgroundColor: const Color.fromARGB(255, 95, 189, 212),

@@ -9,7 +9,7 @@ class CustomCloseButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: const Icon(Icons.close),
+      icon: const Icon(Icons.close, color: Colors.white),
       onPressed: () {
         if (trayManager != null) {
           trayManager!.minimizeToTray();

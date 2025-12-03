@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import '../data_manager.dart';
-import '../services/sync_service.dart';
 import 'package:provider/provider.dart';
 import '../theme_manager.dart';
 import '../tray_manager.dart';
 import '../widgets/close_button_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/auth_service.dart';
 import '../notification_manager.dart';
-// import 'package:supabase_flutter/supabase_flutter.dart';
 class SettingsPage extends StatefulWidget {
   final Function() onSettingsChanged;
   final TrayManager? trayManager;
@@ -26,65 +23,76 @@ class _SettingsPageState extends State<SettingsPage> {
   TimeOfDay _startTime = const TimeOfDay(hour: 8, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 22, minute: 0);
   int _dailyGoal = 2000;
+  String _sex = 'Masculino';
+  int _weight = 70;
+  bool _isAutomaticGoal = false;
   final TextEditingController _dailyGoalController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
+  final FocusNode _weightFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _loadInitialData();
-  }
-
-  void _loadInitialData() {
-    SharedPreferences.getInstance().then((prefs) {
-      if (!mounted) return;
-
-      setState(() {
-        _notificationInterval =
-            prefs.getDouble('defaultNotificationInterval') ?? 2.0;
-        _selectedDays = List<bool>.from(
-            (prefs.getStringList('defaultSelectedDays') ??
-                    List.filled(7, 'true'))
-                .map((e) => e == 'true'));
-        _startTime = TimeOfDay(
-          hour: prefs.getInt('defaultStartTimeHour') ?? 8,
-          minute: prefs.getInt('defaultStartTimeMinute') ?? 0,
-        );
-        _endTime = TimeOfDay(
-          hour: prefs.getInt('defaultEndTimeHour') ?? 22,
-          minute: prefs.getInt('defaultEndTimeMinute') ?? 0,
-        );
-        _dailyGoal = prefs.getInt('defaultDailyGoal') ?? 2000;
-        _dailyGoalController.text = _dailyGoal.toString();
-      });
-
-      _loadSettings();
+    _weightFocusNode.addListener(() {
+      if (!_weightFocusNode.hasFocus) {
+        _onWeightEditingComplete();
+      }
     });
   }
 
-  _loadSettings() async {
-    final data = await DataManager.loadData();
+  void _loadInitialData() async {
     final prefs = await SharedPreferences.getInstance();
-
     if (!mounted) return;
 
     setState(() {
-      _notificationInterval = (data['notificationInterval'] ?? 2.0).toDouble();
-      _selectedDays =
-          List<bool>.from(data['selectedDays'] ?? List.filled(7, true));
+      _notificationInterval = prefs.getDouble('defaultNotificationInterval') ?? 2.0;
+      _sex = prefs.getString('defaultSex') ?? 'Masculino';
+      _weight = prefs.getInt('defaultWeight') ?? 70;
+      _isAutomaticGoal = prefs.getBool('defaultIsAutomaticGoal') ?? false;
+      _selectedDays = List<bool>.from(
+          (prefs.getStringList('defaultSelectedDays') ?? List.filled(7, 'true'))
+              .map((e) => e == 'true'));
       _startTime = TimeOfDay(
-        hour: data['startTimeHour'] ?? 8,
-        minute: data['startTimeMinute'] ?? 0,
+        hour: prefs.getInt('defaultStartTimeHour') ?? 8,
+        minute: prefs.getInt('defaultStartTimeMinute') ?? 0,
       );
       _endTime = TimeOfDay(
-        hour: data['endTimeHour'] ?? 22,
-        minute: data['endTimeMinute'] ?? 0,
+        hour: prefs.getInt('defaultEndTimeHour') ?? 22,
+        minute: prefs.getInt('defaultEndTimeMinute') ?? 0,
       );
-      _dailyGoal = data['dailyGoal'] ?? 2000;
+      _dailyGoal = prefs.getInt('defaultDailyGoal') ?? 2000;
       _dailyGoalController.text = _dailyGoal.toString();
+      _weightController.text = _weight.toString();
     });
 
-    // Salva os novos valores padrão
+    // Load persisted data file and merge
+    final data = await DataManager.loadData();
+    if (!mounted) return;
+    setState(() {
+      _notificationInterval = (data['notificationInterval'] ?? _notificationInterval).toDouble();
+      _sex = data['sex'] ?? _sex;
+      _weight = data['weight'] ?? _weight;
+      _isAutomaticGoal = data['isAutomaticGoal'] ?? _isAutomaticGoal;
+      _selectedDays = List<bool>.from(data['selectedDays'] ?? _selectedDays);
+      _startTime = TimeOfDay(
+        hour: data['startTimeHour'] ?? _startTime.hour,
+        minute: data['startTimeMinute'] ?? _startTime.minute,
+      );
+      _endTime = TimeOfDay(
+        hour: data['endTimeHour'] ?? _endTime.hour,
+        minute: data['endTimeMinute'] ?? _endTime.minute,
+      );
+      _dailyGoal = data['dailyGoal'] ?? _dailyGoal;
+      _dailyGoalController.text = _dailyGoal.toString();
+      _weightController.text = _weight.toString();
+    });
+
+    // Save defaults back to prefs
     await prefs.setDouble('defaultNotificationInterval', _notificationInterval);
+    await prefs.setString('defaultSex', _sex);
+    await prefs.setInt('defaultWeight', _weight);
+    await prefs.setBool('defaultIsAutomaticGoal', _isAutomaticGoal);
     await prefs.setStringList(
         'defaultSelectedDays', _selectedDays.map((e) => e.toString()).toList());
     await prefs.setInt('defaultStartTimeHour', _startTime.hour);
@@ -96,11 +104,18 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   void dispose() {
+    _weightController.dispose();
+    _weightFocusNode.dispose();
     _dailyGoalController.dispose();
     super.dispose();
   }
 
   Future<void> _saveSettingsAutomatically() async {
+    // Calculate daily goal when automatic is enabled
+    final multiplier = _sex == 'Feminino' ? 30 : 35;
+    final int calculatedGoal = _weight * multiplier;
+    final int finalGoal = _isAutomaticGoal ? calculatedGoal : _dailyGoal;
+
     final data = {
       'notificationInterval': _notificationInterval,
       'selectedDays': _selectedDays,
@@ -108,8 +123,14 @@ class _SettingsPageState extends State<SettingsPage> {
       'startTimeMinute': _startTime.minute,
       'endTimeHour': _endTime.hour,
       'endTimeMinute': _endTime.minute,
-      'dailyGoal': _dailyGoal,
+      'dailyGoal': finalGoal,
+      'sex': _sex,
+      'weight': _weight,
+      'isAutomaticGoal': _isAutomaticGoal,
     };
+
+  // Note: do not overwrite the controller here to avoid interrupting user typing.
+  // The controller is updated only when switching to automatic mode or when loading settings.
 
     await DataManager.saveData(data);
     widget.onSettingsChanged();
@@ -124,6 +145,39 @@ class _SettingsPageState extends State<SettingsPage> {
     );
 
     // Sincronização remota removida (Supabase)
+  }
+
+  void _onWeightEditingComplete() async {
+    final text = _weightController.text.trim();
+    final parsed = int.tryParse(text);
+    if (parsed != null && parsed > 0) {
+      setState(() {
+        _weight = parsed;
+      });
+      if (_isAutomaticGoal) {
+        final multiplier = _sex == 'Feminino' ? 30 : 35;
+        final int calculatedGoal = _weight * multiplier;
+        setState(() {
+          _dailyGoal = calculatedGoal;
+          _dailyGoalController.text = _dailyGoal.toString();
+        });
+      }
+      await _saveSettingsAutomatically();
+    }
+  }
+
+  String _formatIntervalLabel(double value) {
+    // value is in hours, possibly fractional (e.g. 1.5)
+    final totalMinutes = (value * 60).round();
+    final hours = totalMinutes ~/ 60;
+    final minutes = totalMinutes % 60;
+    if (hours > 0 && minutes > 0) {
+      return '${hours}h ${minutes}min';
+    } else if (hours > 0) {
+      return '${hours}h';
+    } else {
+      return '${minutes}min';
+    }
   }
 
   @override
@@ -174,7 +228,8 @@ class _SettingsPageState extends State<SettingsPage> {
                                 );
                               },
                             ),
-                            const Divider(),
+                            const SizedBox(height: 12),
+                            
                             const Text(
                               'Dias de notificação',
                               style: TextStyle(
@@ -202,7 +257,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               min: 0.5,
                               max: 6,
                               divisions: 11,
-                              label: _notificationInterval.toString(),
+                              label: _formatIntervalLabel(_notificationInterval),
                               onChanged: (double value) {
                                 setState(() {
                                   _notificationInterval = value;
@@ -211,10 +266,95 @@ class _SettingsPageState extends State<SettingsPage> {
                               },
                             ),
                             Text(
-                              'Notificar a cada ${_notificationInterval.toStringAsFixed(1)} horas',
+                              'Notificar a cada ${_formatIntervalLabel(_notificationInterval)}',
                               style: const TextStyle(fontSize: 16),
                             ),
                             const SizedBox(height: 20),
+
+                            // Sex selection
+                            const Text('Sexo', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ChoiceChip(
+                                    label: const Text('Masculino'),
+                                    selected: _sex == 'Masculino',
+                                    onSelected: (s) {
+                                      if (!s) return; // Ignora deselecionar virtual
+                                      setState(() {
+                                        _sex = 'Masculino';
+                                        if (_isAutomaticGoal) {
+                                          final multiplier = _sex == 'Feminino' ? 30 : 35;
+                                          final int calculatedGoal = _weight * multiplier;
+                                          _dailyGoal = calculatedGoal;
+                                          _dailyGoalController.text = _dailyGoal.toString();
+                                        }
+                                      });
+                                      _saveSettingsAutomatically();
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: ChoiceChip(
+                                    label: const Text('Feminino'),
+                                    selected: _sex == 'Feminino',
+                                    onSelected: (s) {
+                                      if (!s) return;
+                                      setState(() {
+                                        _sex = 'Feminino';
+                                        if (_isAutomaticGoal) {
+                                          final multiplier = _sex == 'Feminino' ? 30 : 35;
+                                          final int calculatedGoal = _weight * multiplier;
+                                          _dailyGoal = calculatedGoal;
+                                          _dailyGoalController.text = _dailyGoal.toString();
+                                        }
+                                      });
+                                      _saveSettingsAutomatically();
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            // Weight selector (editable text)
+                            const Text('Peso (kg)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _weightController,
+                              focusNode: _weightFocusNode,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                border: OutlineInputBorder(),
+                                suffixText: 'kg',
+                                labelText: 'Peso',
+                              ),
+                              onSubmitted: (v) => _onWeightEditingComplete(),
+                            ),
+                            const SizedBox(height: 8),
+                            // Automatic / Manual goal
+                            SwitchListTile(
+                              title: const Text('Meta automática baseada no peso'),
+                              subtitle: Text(_isAutomaticGoal
+                                  ? 'Meta calculada automaticamente'
+                                  : 'Defina manualmente sua meta'),
+                              value: _isAutomaticGoal,
+                              onChanged: (bool value) async {
+                                setState(() => _isAutomaticGoal = value);
+                                // If switched to automatic, calculate and update the controller
+                                if (_isAutomaticGoal) {
+                                  final multiplier = _sex == 'Feminino' ? 30 : 35;
+                                  final int calculatedGoal = _weight * multiplier;
+                                  setState(() {
+                                    _dailyGoal = calculatedGoal;
+                                    _dailyGoalController.text = _dailyGoal.toString();
+                                  });
+                                }
+                                await _saveSettingsAutomatically();
+                              },
+                            ),
+                            const Divider(),
                             const Text(
                               'Meta diária de água (ml)',
                               style: TextStyle(
@@ -224,9 +364,13 @@ class _SettingsPageState extends State<SettingsPage> {
                             TextField(
                               controller: _dailyGoalController,
                               keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
+                              enabled: !_isAutomaticGoal,
+                              decoration: InputDecoration(
+                                border: const OutlineInputBorder(),
                                 labelText: 'Meta diária (ml)',
+                                helperText: _isAutomaticGoal
+                                    ? 'Desative meta automática para editar'
+                                    : null,
                               ),
                               onChanged: (value) {
                                 setState(() {

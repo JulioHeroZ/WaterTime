@@ -45,6 +45,10 @@ class _AchievementsPageState extends State<AchievementsPage> {
                   'Conquistas',
                   style: TextStyle(color: Colors.white),
                 ),
+                leading: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
                 actions: [
                   CustomCloseButton(trayManager: widget.trayManager),
                 ],

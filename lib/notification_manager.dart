@@ -11,7 +11,7 @@ class NotificationManager {
   bool _goalAchievedNotified = false;
 
   Future<void> initializeNotifications() async {
-    await localNotifier.setup(appName: "WaterTime");
+    await localNotifier.setup(appName: "Water Time");
   }
 
   Future<void> showNotification(String title, String body) async {

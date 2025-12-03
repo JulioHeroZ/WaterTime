@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 import 'Home Page/water_reminder_home_page.dart';
+import 'onboarding/onboarding_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'tray_manager.dart';
 import 'notification_manager.dart';
 import 'achievements/achievement_manager.dart';
@@ -61,9 +63,20 @@ class WaterReminderApp extends StatelessWidget {
         }
         return child!;
       },
-      home: WaterReminderHomePage(
-        trayManager: trayManager,
-        notificationManager: notificationManager,
+      home: FutureBuilder<SharedPreferences>(
+        future: SharedPreferences.getInstance(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          final prefs = snapshot.data!;
+          final completed = prefs.getBool('hasCompletedOnboarding') ?? false;
+          if (!completed) {
+            return OnboardingPage(trayManager: trayManager);
+          }
+          return WaterReminderHomePage(
+            trayManager: trayManager,
+            notificationManager: notificationManager,
+          );
+        },
       ),
     );
   }

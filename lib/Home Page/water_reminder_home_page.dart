@@ -7,16 +7,14 @@ import '../tray_manager.dart';
 import '../data_manager.dart';
 import '../notification_manager.dart';
 import '../custom_amount.dart';
-import '../dialogs.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:easy_sidemenu/easy_sidemenu.dart';
 import '../Statistics Page/statistics_page.dart';
 import '../widgets/animated_water_glass.dart';
 import '../achievements/achievements_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/auth_service.dart';
-import '../services/sync_service.dart';
 import '../Ranking Page/ranking_page.dart';
+
 
 class WaterReminderHomePage extends StatefulWidget {
   final TrayManager? trayManager;
@@ -45,6 +43,10 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
   TimeOfDay _endTime = const TimeOfDay(hour: 22, minute: 0);
   List<CustomAmount> _customAmounts = [];
   int? _lastAddedAmount;
+  // Última quantidade selecionada pelo usuário para rápido reuso
+  int? _lastSelectedAmount;
+  // Quantidade personalizada padrão salva em SharedPreferences
+  int _customQuickAmount = 0;
 
   Timer? _midnightResetTimer;
 
@@ -70,7 +72,6 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
     super.initState();
     windowManager.addListener(this);
     _loadData();
-    _scheduleNotifications();
     _loadCustomAmounts();
     _scheduleMidnightReset();
     _loadHistory();
@@ -193,6 +194,9 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
       final data = await DataManager.loadData();
       final lastAddition = await DataManager
           .getLastAddition(); // Novo método para pegar última adição
+      final prefs = await SharedPreferences.getInstance();
+      final savedLastSelected = prefs.getInt('last_selected_amount');
+      final savedCustomQuick = prefs.getInt('customWaterAmount');
 
       setState(() {
         _waterConsumed = (data['waterConsumed'] ?? 0).toInt();
@@ -209,9 +213,19 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
         // Atualiza o último valor adicionado
         _lastAddedAmount =
             lastAddition != null ? lastAddition['amount'] as int : null;
+        // Mantém última quantidade selecionada independente de remoções
+        _lastSelectedAmount = savedLastSelected;
+        _customQuickAmount = savedCustomQuick ?? _customQuickAmount;
       });
 
       _checkAndResetIfNeeded();
+      // (Re)agenda notificações usando o gerenciador centralizado (singleton)
+      await widget.notificationManager.scheduleNotifications(
+        _notificationInterval,
+        _startTime,
+        _endTime,
+        _selectedDays,
+      );
     } catch (e) {
       print('Erro ao carregar dados: $e');
     }
@@ -240,66 +254,11 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
     });
   }
 
-  Future<void> _saveCustomAmounts() async {
-    await DataManager.saveCustomAmounts(_customAmounts);
-  }
+  // Removido: _saveCustomAmounts não utilizado
 
-  void _scheduleNotifications() async {
-    _notificationTimer?.cancel();
-    _notificationTimer =
-        Timer.periodic(const Duration(minutes: 1), (timer) async {
-      final now = DateTime.now();
-      const lastNotificationKey = 'last_notification_time';
-      final prefs = await SharedPreferences.getInstance();
-      final lastNotificationTime = prefs.getString(lastNotificationKey);
+  
 
-      if (lastNotificationTime != null) {
-        final lastTime = DateTime.parse(lastNotificationTime);
-        final difference = now.difference(lastTime).inMinutes;
-
-        // Só notifica se passou o intervalo definido
-        if (difference < (_notificationInterval * 60).round()) {
-          return;
-        }
-      }
-
-      _checkAndSendNotification();
-      prefs.setString(lastNotificationKey, now.toIso8601String());
-    });
-  }
-
-  void _checkAndSendNotification() {
-    final now = DateTime.now();
-    final currentDay = now.weekday - 1;
-    final currentTime = TimeOfDay.fromDateTime(now);
-
-    if (_selectedDays[currentDay] &&
-        _isTimeInRange(currentTime, _startTime, _endTime) &&
-        _waterConsumed < _dailyGoal) {
-      final startMinutes = _startTime.hour * 60 + _startTime.minute;
-      final currentMinutes = currentTime.hour * 60 + currentTime.minute;
-      final elapsedMinutes = currentMinutes - startMinutes;
-
-      if (elapsedMinutes % (_notificationInterval * 60).round() == 0) {
-        widget.notificationManager.showNotification(
-          'Lembrete de Água',
-          'Hora de beber água! Você já bebeu $_waterConsumed ml de $_dailyGoal ml.',
-        );
-      }
-    }
-  }
-
-  bool _isTimeInRange(TimeOfDay time, TimeOfDay start, TimeOfDay end) {
-    final now = time.hour * 60 + time.minute;
-    final startMinutes = start.hour * 60 + start.minute;
-    final endMinutes = end.hour * 60 + end.minute;
-
-    if (endMinutes > startMinutes) {
-      return now >= startMinutes && now <= endMinutes;
-    } else {
-      return now >= startMinutes || now <= endMinutes;
-    }
-  }
+  // Removido: _isTimeInRange não utilizado nesta classe (controle movido para NotificationManager)
 
   Future<void> _saveData() async {
     final data = {
@@ -316,6 +275,17 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
 
     try {
       _isAddingWater = true;
+
+      // Atualiza última quantidade selecionada (persistente)
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('last_selected_amount', amount);
+        setState(() {
+          _lastSelectedAmount = amount;
+        });
+      } catch (e) {
+        print('Falha ao salvar última quantidade selecionada: $e');
+      }
 
       setState(() {
         int previousWaterConsumed = _waterConsumed;
@@ -383,10 +353,6 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
         _history = history;
       });
 
-      // Sincroniza com o Supabase se estiver logado
-      if (await AuthService.isUserLoggedIn()) {
-        await SyncService.syncUserData();
-      }
     } catch (e) {
       print('Erro ao carregar histórico: $e');
     }
@@ -402,7 +368,9 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
       backgroundColor: isDarkMode ? Colors.grey[900] : Colors.white,
       body: Row(
         children: [
-          SideMenu(
+          Padding(
+            padding: const EdgeInsets.only(top: 5.0),
+            child: SideMenu(
             controller: _sideMenuController,
             style: SideMenuStyle(
               displayMode: SideMenuDisplayMode.auto,
@@ -424,10 +392,7 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
                 ),
               ),
             ),
-            items: [
-              // Substituído: o botão de Perfil/Login foi removido e substituído
-              // por um atalho para as Configurações. A navegação para login
-              // foi removida conforme solicitado.
+            items: [            
               SideMenuItem(
                 title: 'Configurações',
                 onTap: (index, _) {
@@ -496,8 +461,8 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
                 },
                 icon: const Icon(Icons.leaderboard_outlined),
               ),
-              // Item 'Verificar Atualizações' removido conforme solicitado.
             ],
+          ),
           ),
           Expanded(
             child: Padding(
@@ -601,15 +566,17 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
                                   // Botão de quantidade personalizada - SEMPRE visível
                                   ElevatedButton(
                                     onPressed: () async {
-                                      final prefs =
-                                          await SharedPreferences.getInstance();
-                                      final customAmount =
-                                          prefs.getInt('customWaterAmount') ??
-                                              0;
-                                      final amountToAdd = _lastAddedAmount == 0
-                                          ? customAmount
-                                          : _lastAddedAmount ?? 0;
-                                      _addWater(amountToAdd);
+                                      // Usa a última quantidade selecionada persistida;
+                                      // se inexistente, usa a quantidade personalizada salva;
+                                      // fallback para 0.
+                                      final amountToAdd = _lastSelectedAmount ?? _customQuickAmount;
+                                      if (amountToAdd > 0) {
+                                        _addWater(amountToAdd);
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Defina uma quantidade primeiro.')),
+                                        );
+                                      }
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color.fromARGB(
@@ -617,20 +584,12 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 32, vertical: 16),
                                     ),
-                                    child: FutureBuilder<SharedPreferences>(
-                                      future: SharedPreferences.getInstance(),
-                                      builder: (context, snapshot) {
-                                        if (!snapshot.hasData)
-                                          return const Text('+ 0 ml');
-                                        final customAmount = snapshot.data!
-                                                .getInt('customWaterAmount') ??
-                                            0;
-                                        final displayAmount =
-                                            _lastAddedAmount == 0
-                                                ? customAmount
-                                                : _lastAddedAmount ?? 0;
-                                        return Text('+ $displayAmount ml');
-                                      },
+                                    child: Text(
+                                      '+ ${_lastSelectedAmount ?? _customQuickAmount} ml',
+                                      style: TextStyle(
+                                        color: const Color.fromARGB(
+                                          255, 95, 189, 212),
+                                      ),
                                     ),
                                   ),
 
@@ -638,11 +597,11 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
                                   // Botão de remover
                                   TextButton(
                                     onPressed: _removeLastWater,
-                                    child: const Text(
+                                    child:  Text(
                                       'Remover quantidade',
                                       style: TextStyle(
-                                          color: Color.fromARGB(
-                                              255, 100, 100, 100)),
+                                        color: isDarkMode ? const Color.fromARGB(255, 255, 255, 255) : Color.fromARGB(
+                                              255, 100, 100, 100)  ,),
                                     ),
                                   ),
                                   const SizedBox(height: 16),
@@ -874,6 +833,11 @@ class _WaterReminderHomePageState extends State<WaterReminderHomePage>
                 // Salva a quantidade personalizada
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.setInt('customWaterAmount', amount);
+                // Atualiza estado local
+                setState(() {
+                  _customQuickAmount = amount;
+                  _lastSelectedAmount ??= amount; // se ainda não houver última seleção
+                });
 
                 Navigator.pop(context);
                 _addWater(amount);
